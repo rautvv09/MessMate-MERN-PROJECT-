@@ -1,30 +1,31 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const config = require('../config/env');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
 exports.protect = catchAsync(async (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  const token = req.cookies?.accessToken;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return next(new AppError('Not authorized, no token provided', 401));
+  if (!token) {
+    return next(new AppError('Not authenticated. Please log in.', 401));
   }
-
-  const token = authHeader.split(' ')[1];
 
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(token, config.jwt.accessSecret);
   } catch (error) {
-    return next(new AppError('Not authorized, invalid or expired token', 401));
+    if (error.name === 'TokenExpiredError') {
+      return next(new AppError('Session expired', 401, 'TOKEN_EXPIRED'));
+    }
+    return next(new AppError('Invalid session. Please log in again.', 401));
   }
 
   const user = await User.findById(decoded.id);
 
   if (!user) {
-    return next(new AppError('The user belonging to this token no longer exists', 401));
+    return next(new AppError('The user belonging to this session no longer exists', 401));
   }
-
   if (!user.isActive) {
     return next(new AppError('This account has been deactivated', 403));
   }
@@ -36,9 +37,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return next(
-        new AppError(`This action is restricted to: ${roles.join(', ')}`, 403)
-      );
+      return next(new AppError(`This action is restricted to: ${roles.join(', ')}`, 403));
     }
     next();
   };

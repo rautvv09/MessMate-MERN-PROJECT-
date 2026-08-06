@@ -6,6 +6,11 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import CompleteGoogleSignup from './pages/auth/CompleteGoogleSignup';
+import VerifyEmail from './pages/auth/VerifyEmail';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
+
 import Dashboard from './pages/student/Dashboard';
 import MessDetails from './pages/student/MessDetails';
 import MyBookings from './pages/student/MyBookings';
@@ -21,9 +26,14 @@ function App() {
         <Toaster position="top-right" toastOptions={{ duration: 4000, style: { fontSize: '14px' } }} />
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
+
           {/* Auth pages render standalone, without the Navbar */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/complete-google-signup" element={<CompleteGoogleSignup />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Everything else shares the Navbar via MainLayout as a parent route */}
           <Route element={<MainLayout />}>
@@ -59,6 +69,7 @@ function App() {
               element={<ProtectedRoute allowedRoles={['owner']}><ManageMess /></ProtectedRoute>}
             />
           </Route>
+
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AuthProvider>

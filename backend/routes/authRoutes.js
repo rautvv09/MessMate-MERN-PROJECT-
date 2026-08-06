@@ -1,42 +1,35 @@
 const express = require('express');
-const { body } = require('express-validator');
+const rateLimit = require('express-rate-limit');
+const {
+  register, login, googleAuth, verifyEmail, resendVerification,
+  refresh, logout, logoutAll, forgotPassword, resetPassword,
+} = require('../controllers/authController');
+const {
+  registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation,
+} = require('../validators/authValidators');
 const validate = require('../middleware/validate');
 const { protect } = require('../middleware/auth');
-const {
-  registerStudent,
-  registerOwner,
-  login,
-  getMe,
-} = require('../controllers/authController');
 
 const router = express.Router();
 
-const studentValidation = [
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
-  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-  body('phone').matches(/^[6-9]\d{9}$/).withMessage('Valid 10-digit phone number is required'),
-  body('college').trim().notEmpty().withMessage('College is required'),
-  body('city').trim().notEmpty().withMessage('City is required'),
-];
+const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 10,
+  message: { success: false, message: 'Too many login attempts. Please try again later.' },
+});
+const forgotPasswordRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, max: 3,
+  message: { success: false, message: 'Too many password reset requests. Please try again in an hour.' },
+});
 
-const ownerValidation = [
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
-  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-  body('phone').matches(/^[6-9]\d{9}$/).withMessage('Valid 10-digit phone number is required'),
-  body('businessName').trim().notEmpty().withMessage('Business name is required'),
-  body('address').trim().notEmpty().withMessage('Address is required'),
-];
-
-const loginValidation = [
-  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
-  body('password').notEmpty().withMessage('Password is required'),
-];
-
-router.post('/register/student', studentValidation, validate, registerStudent);
-router.post('/register/owner', ownerValidation, validate, registerOwner);
-router.post('/login', loginValidation, validate, login);
-router.get('/me', protect, getMe);
+router.post('/register', registerValidation, validate, register);
+router.post('/login', loginRateLimiter, loginValidation, validate, login);
+router.post('/google', googleAuth);
+router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerification);
+router.post('/refresh', refresh);
+router.post('/logout', protect, logout);
+router.post('/logout-all', protect, logoutAll);
+router.post('/forgot-password', forgotPasswordRateLimiter, forgotPasswordValidation, validate, forgotPassword);
+router.post('/reset-password', resetPasswordValidation, validate, resetPassword);
 
 module.exports = router;
