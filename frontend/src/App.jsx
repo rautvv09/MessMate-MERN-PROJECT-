@@ -15,9 +15,17 @@ import Dashboard from './pages/student/Dashboard';
 import MessDetails from './pages/student/MessDetails';
 import MyBookings from './pages/student/MyBookings';
 import Profile from './pages/student/Profile';
+import StudentAttendancePage from './pages/student/StudentAttendancePage';
+import StudentBillingPage from './pages/student/StudentBillingPage';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 import MessForm from './pages/owner/MessForm';
 import ManageMess from './pages/owner/ManageMess';
+import AttendancePage from './pages/owner/AttendancePage';
+import BillingPage from './pages/owner/BillingPage';
+import ReportingPage from './pages/owner/ReportingPage';
+import StudentsPage from './pages/owner/StudentsPage';
+
+import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
@@ -25,8 +33,6 @@ function App() {
       <AuthProvider>
         <Toaster position="top-right" toastOptions={{ duration: 4000, style: { fontSize: '14px' } }} />
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-
           {/* Auth pages render standalone, without the Navbar */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -37,6 +43,7 @@ function App() {
 
           {/* Everything else shares the Navbar via MainLayout as a parent route */}
           <Route element={<MainLayout />}>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/messes/:messId" element={<MessDetails />} />
 
             <Route
@@ -49,12 +56,37 @@ function App() {
             />
             <Route
               path="/profile"
-              element={<ProtectedRoute allowedRoles={['student']}><Profile /></ProtectedRoute>}
+              element={<ProtectedRoute allowedRoles={['student', 'owner']}><Profile /></ProtectedRoute>}
+            />
+            <Route
+              path="/my-attendance"
+              element={<ProtectedRoute allowedRoles={['student']}><StudentAttendancePage /></ProtectedRoute>}
+            />
+            <Route
+              path="/my-bills"
+              element={<ProtectedRoute allowedRoles={['student']}><StudentBillingPage /></ProtectedRoute>}
             />
 
+            {/* Owner Routes */}
             <Route
               path="/owner/dashboard"
               element={<ProtectedRoute allowedRoles={['owner']}><OwnerDashboard /></ProtectedRoute>}
+            />
+            <Route
+              path="/owner/students"
+              element={<ProtectedRoute allowedRoles={['owner']}><StudentsPage /></ProtectedRoute>}
+            />
+            <Route
+              path="/owner/attendance"
+              element={<ProtectedRoute allowedRoles={['owner']}><AttendancePage /></ProtectedRoute>}
+            />
+            <Route
+              path="/owner/billing"
+              element={<ProtectedRoute allowedRoles={['owner']}><BillingPage /></ProtectedRoute>}
+            />
+            <Route
+              path="/owner/reports"
+              element={<ProtectedRoute allowedRoles={['owner']}><ReportingPage /></ProtectedRoute>}
             />
             <Route
               path="/owner/messes/new"
@@ -67,6 +99,18 @@ function App() {
             <Route
               path="/owner/messes/:messId/manage"
               element={<ProtectedRoute allowedRoles={['owner']}><ManageMess /></ProtectedRoute>}
+            />
+            <Route
+              path="/owner/messes/:messId/attendance"
+              element={<ProtectedRoute allowedRoles={['owner']}><AttendancePage /></ProtectedRoute>}
+            />
+            <Route
+              path="/owner/messes/:messId/billing"
+              element={<ProtectedRoute allowedRoles={['owner']}><BillingPage /></ProtectedRoute>}
+            />
+            <Route
+              path="/owner/messes/:messId/reports"
+              element={<ProtectedRoute allowedRoles={['owner']}><ReportingPage /></ProtectedRoute>}
             />
           </Route>
 

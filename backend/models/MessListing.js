@@ -10,12 +10,23 @@ const messListingSchema = new mongoose.Schema(
     city: { type: String, required: true, trim: true, index: true },
     location: {
       type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], default: undefined },
+      coordinates: {
+        type: [Number],
+        required: [true, 'Location coordinates are required'],
+        default: [74.4595, 16.6976],
+      },
     },
     pricing: {
       baseFee: { type: Number, required: true, min: 0 },
       deposit: { type: Number, default: 0, min: 0 },
       registrationFee: { type: Number, default: 0, min: 0 },
+    },
+    mealPricing: {
+      breakfast: { type: Number, default: 40, min: 0 },
+      lunch: { type: Number, default: 70, min: 0 },
+      dinner: { type: Number, default: 70, min: 0 },
+      fullDay: { type: Number, default: 180, min: 0 },
+      gstPercentage: { type: Number, default: 5, min: 0, max: 28 },
     },
     totalSeats: { type: Number, required: true, min: 1 },
     facilities: {

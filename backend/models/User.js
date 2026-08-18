@@ -154,15 +154,17 @@ const userSchema = new mongoose.Schema(
 );
 
 // ==================== INDEXES ====================
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 userSchema.index({ role: 1 });
 
-// ==================== PASSWORD HASHING ====================
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password') || !this.password) return next();
+// ==================== PASSWORD HASHING & PRE-SAVE ====================
+userSchema.pre('save', async function () {
+  // Ensure googleId is strictly undefined if null or empty, to avoid sparse index collisions
+  if (this.googleId === null || this.googleId === '') {
+    this.googleId = undefined;
+  }
+
+  if (!this.isModified('password') || !this.password) return;
   this.password = await bcrypt.hash(this.password, 12);
-  next();
 });
 
 // ==================== INSTANCE METHODS ====================

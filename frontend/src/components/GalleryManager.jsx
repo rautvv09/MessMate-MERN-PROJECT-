@@ -16,7 +16,7 @@ const GalleryManager = ({ messId, gallery, onGalleryChange }) => {
 
     if (gallery.length + files.length > MAX_IMAGES) {
       toast.error(`Gallery limit is ${MAX_IMAGES} images. You have ${gallery.length} already.`);
-      e.target.value = ''; // reset the input so the same (rejected) selection can be retried after removing some
+      e.target.value = '';
       return;
     }
 
@@ -32,7 +32,7 @@ const GalleryManager = ({ messId, gallery, onGalleryChange }) => {
       toast.error(error.response?.data?.message || 'Upload failed');
     } finally {
       setIsUploading(false);
-      e.target.value = ''; // allow re-selecting the same file again later if needed
+      e.target.value = '';
     }
   };
 
@@ -52,14 +52,14 @@ const GalleryManager = ({ messId, gallery, onGalleryChange }) => {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-gray-500">{gallery.length} / {MAX_IMAGES} images</p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-bold text-text-secondary">{gallery.length} / {MAX_IMAGES} images uploaded</p>
         <button
           type="button"
           onClick={() => fileInputRef.current.click()}
           disabled={isUploading || gallery.length >= MAX_IMAGES}
-          className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white text-sm font-medium px-4 py-2 rounded-lg"
+          className="flex items-center gap-2 bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md"
         >
           <FaPlus size={12} /> {isUploading ? 'Uploading...' : 'Add Photos'}
         </button>
@@ -74,22 +74,22 @@ const GalleryManager = ({ messId, gallery, onGalleryChange }) => {
       </div>
 
       {gallery.length === 0 ? (
-        <p className="text-gray-400 text-sm py-8 text-center bg-gray-50 rounded-xl">
+        <p className="text-text-muted text-xs py-12 text-center bg-background border border-dashed border-border rounded-2xl">
           No photos yet — add some to attract more students.
         </p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {gallery.map((img) => (
-            <div key={img.publicId} className="relative group aspect-square rounded-lg overflow-hidden">
+            <div key={img.publicId} className="relative group aspect-square rounded-2xl overflow-hidden border border-border">
               <img src={img.url} alt="" className="w-full h-full object-cover" />
               <button
                 type="button"
                 onClick={() => handleDelete(img.publicId)}
                 disabled={deletingId === img.publicId}
-                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-xs"
                 aria-label="Delete image"
               >
-                <FaTrash className="text-white" size={16} />
+                <FaTrash className="text-status-danger" size={18} />
               </button>
             </div>
           ))}

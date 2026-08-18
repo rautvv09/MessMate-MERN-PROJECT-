@@ -60,39 +60,39 @@ const NotificationBell = () => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button onClick={handleOpen} className="relative p-2 text-gray-500 hover:text-gray-700" aria-label="Notifications">
+      <button onClick={handleOpen} className="relative p-2 text-text-secondary hover:text-text-primary rounded-full transition-colors" aria-label="Notifications">
         <FaBell size={18} />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+          <span className="absolute top-0 right-0 bg-status-danger text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-50">
-          <div className="flex items-center justify-between p-3 border-b border-gray-100">
-            <p className="font-medium text-sm text-gray-800">Notifications</p>
+        <div className="absolute right-0 mt-2 w-80 bg-surface rounded-xl shadow-xl border border-border max-h-96 overflow-y-auto z-50">
+          <div className="flex items-center justify-between p-3 border-b border-border">
+            <p className="font-bold text-sm text-text-primary">Notifications</p>
             {unreadCount > 0 && (
-              <button onClick={handleMarkAllRead} className="text-xs text-emerald-600 hover:underline">
+              <button onClick={handleMarkAllRead} className="text-xs text-primary hover:underline">
                 Mark all read
               </button>
             )}
           </div>
 
           {notifications.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">No notifications yet</p>
+            <p className="text-sm text-text-muted text-center py-6">No notifications yet</p>
           ) : (
             notifications.map((n) => (
               <button
                 key={n._id}
                 onClick={() => handleNotificationClick(n)}
-                className={`w-full text-left p-3 text-sm border-b border-gray-50 hover:bg-gray-50 ${
-                  !n.isRead ? 'bg-emerald-50/50' : ''
+                className={`w-full text-left p-3 text-sm border-b border-border/50 hover:bg-background transition-colors ${
+                  !n.isRead ? 'bg-primary/10' : ''
                 }`}
               >
-                <p className={`text-gray-700 ${!n.isRead ? 'font-medium' : ''}`}>{n.message}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className={`text-text-primary ${!n.isRead ? 'font-semibold' : ''}`}>{n.message}</p>
+                <p className="text-xs text-text-secondary mt-0.5">
                   {new Date(n.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                 </p>
               </button>

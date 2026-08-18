@@ -72,3 +72,31 @@ exports.accountLockedEmailTemplate = (name) =>
     null,
     null
   );
+
+exports.billNotificationTemplate = (studentName, messName, billNumber, totalAmount, dueDate, dashboardUrl) =>
+  baseTemplate(
+    `New Bill Generated`,
+    `
+    <p>Hi ${studentName},</p>
+    <p>A new monthly bill (<strong>${billNumber}</strong>) has been generated for you by <strong>${messName}</strong>.</p>
+    <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 15px 0;">
+      <p style="margin: 0 0 10px 0;"><strong>Total Amount:</strong> ₹${totalAmount.toFixed(2)}</p>
+      <p style="margin: 0;"><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>
+    </div>
+    <p>You can view the detailed breakdown and download the PDF invoice from your dashboard.</p>
+    `,
+    'View My Bills',
+    dashboardUrl
+  );
+
+exports.attendanceReminderTemplate = (ownerName, messName, dashboardUrl) =>
+  baseTemplate(
+    `Attendance Reminder`,
+    `
+    <p>Hi ${ownerName},</p>
+    <p>This is an automated reminder to mark today's attendance for <strong>${messName}</strong>.</p>
+    <p>Keeping attendance updated daily ensures accurate billing for your students at the end of the month.</p>
+    `,
+    'Mark Attendance Now',
+    dashboardUrl
+  );

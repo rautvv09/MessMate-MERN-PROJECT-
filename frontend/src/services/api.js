@@ -1,8 +1,17 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
+const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1') && !envUrl.includes('172.') && !envUrl.includes('192.168.')) {
+    return envUrl;
+  }
+  const hostname = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost';
+  return `http://${hostname}:5000/api`;
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   withCredentials: true, // REQUIRED — sends httpOnly cookies on every cross-origin request
 });
 

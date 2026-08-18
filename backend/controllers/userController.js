@@ -36,6 +36,8 @@ exports.updateProfile = catchAsync(async (req, res, next) => {
   const updatedUser = await User.findByIdAndUpdate(req.user._id, updates, {
     new: true,
     runValidators: true,
+    isGoogleUser: !!req.user.googleId,
+    role: req.user.role,
   });
 
   res.status(200).json({

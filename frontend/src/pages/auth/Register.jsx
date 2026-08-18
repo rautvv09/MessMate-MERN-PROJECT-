@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 import FormInput from '../../components/FormInput';
+import ThemeToggle from '../../components/ui/ThemeToggle';
 
 const STUDENT_FIELDS = [
   { name: 'name', label: 'Full Name', type: 'text' },
@@ -84,18 +85,16 @@ const Register = () => {
     }
   };
 
-  // Post-registration: no session exists yet (Module 6's deliberate design) —
-  // show a "check your email" confirmation instead of redirecting anywhere authenticated
   if (registeredEmail) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8 text-center">
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Check your inbox</h1>
-          <p className="text-gray-500 text-sm mb-4">
-            We sent a verification link to <span className="font-medium text-gray-700">{registeredEmail}</span>.
+      <div className="min-h-screen flex items-center justify-center bg-background text-text-primary px-4 py-10 transition-colors">
+        <div className="w-full max-w-md bg-surface border border-border rounded-3xl shadow-xl p-8 text-center">
+          <h1 className="text-xl font-extrabold font-heading text-text-primary mb-2">Check your inbox</h1>
+          <p className="text-text-secondary text-sm mb-4">
+            We sent a verification link to <span className="font-bold text-text-primary">{registeredEmail}</span>.
             Click it to activate your account before logging in.
           </p>
-          <Link to="/login" className="text-emerald-600 text-sm font-medium hover:underline">
+          <Link to="/login" className="text-primary text-sm font-bold hover:underline">
             Back to login
           </Link>
         </div>
@@ -104,18 +103,21 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Create your account</h1>
-        <p className="text-gray-500 mb-6">Join MessMate as a student or mess owner</p>
+    <div className="min-h-screen flex items-center justify-center bg-background text-text-primary px-4 py-10 transition-colors">
+      <div className="w-full max-w-md bg-surface border border-border rounded-3xl shadow-xl p-8">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-extrabold font-heading text-text-primary">Create your account</h1>
+          <ThemeToggle />
+        </div>
+        <p className="text-text-secondary text-sm mb-6">Join MessMate as a student or mess owner</p>
 
-        <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+        <div className="flex bg-background border border-border rounded-xl p-1 mb-6">
           <button type="button" onClick={() => handleRoleSwitch('student')}
-            className={`flex-1 py-2 rounded-md text-sm font-medium ${role === 'student' ? 'bg-white shadow text-emerald-600' : 'text-gray-500'}`}>
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${role === 'student' ? 'bg-surface shadow-sm text-primary border border-border' : 'text-text-secondary hover:text-text-primary'}`}>
             Student
           </button>
           <button type="button" onClick={() => handleRoleSwitch('owner')}
-            className={`flex-1 py-2 rounded-md text-sm font-medium ${role === 'owner' ? 'bg-white shadow text-emerald-600' : 'text-gray-500'}`}>
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${role === 'owner' ? 'bg-surface shadow-sm text-primary border border-border' : 'text-text-secondary hover:text-text-primary'}`}>
             Mess Owner
           </button>
         </div>
@@ -126,14 +128,14 @@ const Register = () => {
               value={formData[field.name] || ''} onChange={handleChange} error={errors[field.name]} />
           ))}
           <button type="submit" disabled={isSubmitting}
-            className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white font-medium py-2.5 rounded-lg mt-2">
+            className="w-full bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-bold py-3 rounded-xl shadow-md transition-all mt-2">
             {isSubmitting ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-sm text-text-secondary mt-6">
           Already have an account?{' '}
-          <Link to="/login" className="text-emerald-600 font-medium hover:underline">Log in</Link>
+          <Link to="/login" className="text-primary font-bold hover:underline">Log in</Link>
         </p>
       </div>
     </div>

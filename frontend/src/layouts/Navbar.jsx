@@ -1,72 +1,259 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from '../components/NotificationBell';
+import ThemeToggle from '../components/ui/ThemeToggle';
+import { FaUtensils, FaBars, FaTimes, FaUser, FaSignOutAlt, FaHeart, FaCalendarAlt, FaReceipt, FaStore, FaCompass } from 'react-icons/fa';
 
 const Navbar = () => {
-  const { user, isAuthenticated, logoutUser } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  const handleLogout = () => {
-    logoutUser();
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
+  const isOwner = user?.role === 'owner';
+
+  const guestLinks = [
+    { to: '/#messes', label: 'Find Mess', icon: FaCompass },
+    { to: '/#how-it-works', label: 'How It Works', icon: FaUtensils },
+    { to: '/#owners', label: 'For Owners', icon: FaStore },
+  ];
+
   const studentLinks = [
-    { to: '/dashboard', label: 'Find Mess' },
-    { to: '/bookings/me', label: 'My Bookings' },
-    { to: '/profile', label: 'Profile' },
+    { to: '/dashboard', label: 'Find Mess', icon: FaCompass },
+    { to: '/bookings/me', label: 'My Bookings', icon: FaUtensils },
+    { to: '/my-attendance', label: 'Attendance', icon: FaCalendarAlt },
+    { to: '/my-bills', label: 'Bills', icon: FaReceipt },
   ];
 
   const ownerLinks = [
-    { to: '/owner/dashboard', label: 'Dashboard' },
+    { to: '/owner/dashboard', label: 'Dashboard', icon: FaStore },
+    { to: '/profile', label: 'My Profile', icon: FaUser },
   ];
 
-  const links = user?.role === 'owner' ? ownerLinks : studentLinks;
+  const activeLinks = !isAuthenticated
+    ? guestLinks
+    : isOwner
+    ? ownerLinks
+    : studentLinks;
+
+  const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
-      <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
-        <Link to={isAuthenticated ? (user.role === 'owner' ? '/owner/dashboard' : '/dashboard') : '/'} className="font-bold text-lg text-emerald-600">
-          MessMate
-        </Link>
+    <header
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-surface/90 dark:bg-surface/90 backdrop-blur-md border-b border-border shadow-sm py-2.5'
+          : 'bg-surface/75 dark:bg-surface/75 backdrop-blur-md border-b border-border/50 py-3.5'
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <Link to={isAuthenticated ? (isOwner ? '/owner/dashboard' : '/dashboard') : '/'} className="flex items-center gap-2.5 group">
+            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xl shadow-md group-hover:scale-105 transition-transform duration-200">
+              <FaUtensils size={18} />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-heading font-extrabold text-xl tracking-tight text-text-primary group-hover:text-primary transition-colors">
+                Mess<span className="text-primary">Mate</span>
+              </span>
+              <span className="text-[10px] font-semibold tracking-wider uppercase text-text-secondary -mt-1">
+                Food Tech
+              </span>
+            </div>
+          </Link>
 
-        {isAuthenticated ? (
-          <div className="flex items-center gap-6">
-            <div className="hidden sm:flex items-center gap-5">
-              {links.map((link) => (
-                <Link key={link.to} to={link.to} className="text-sm font-medium text-gray-600 hover:text-emerald-600">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 bg-background/60 dark:bg-background/40 p-1.5 rounded-full border border-border">
+            {activeLinks.map((link) => {
+              const Icon = link.icon;
+              const active = isActive(link.to);
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 ${
+                    active
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface'
+                  }`}
+                >
+                  {Icon && <Icon size={12} className={active ? 'text-white' : 'text-primary'} />}
                   {link.label}
                 </Link>
-              ))}
-            </div>
+              );
+            })}
+          </nav>
 
-            <NotificationBell />
+          {/* Actions (Notifications, Theme Toggle, Profile / Auth Buttons) */}
+          <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
 
-            <div className="flex items-center gap-3">
-              {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-semibold text-emerald-600">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-red-500">
-                Log out
-              </button>
-            </div>
+            {isAuthenticated ? (
+              <div className="flex items-center gap-3 pl-2 border-l border-border">
+                <NotificationBell />
+
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2.5 p-1.5 pr-3 rounded-full hover:bg-surface border border-transparent hover:border-border transition-all"
+                >
+                  {user.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full object-cover border border-primary/30"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs border border-primary/20">
+                      {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-bold text-text-primary max-w-[100px] truncate leading-tight">
+                      {user.name}
+                    </span>
+                    <span className="text-[10px] text-text-secondary capitalize">
+                      {user.role}
+                    </span>
+                  </div>
+                </Link>
+
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-text-secondary hover:text-status-danger hover:bg-status-danger/10 rounded-full transition-colors"
+                  title="Logout"
+                  aria-label="Logout"
+                >
+                  <FaSignOutAlt size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2.5">
+                <Link
+                  to="/login"
+                  className="text-xs font-bold text-text-primary hover:text-primary px-4 py-2 rounded-full transition-colors"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/register"
+                  className="text-xs font-bold bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="flex items-center gap-4">
-            <Link to="/login" className="text-sm font-medium text-gray-600 hover:text-emerald-600">
-              Log in
-            </Link>
-            <Link to="/register" className="text-sm font-medium bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg">
-              Sign up
-            </Link>
+
+          {/* Mobile Right Controls */}
+          <div className="flex md:hidden items-center gap-2">
+            <ThemeToggle />
+            {isAuthenticated && <NotificationBell />}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-text-primary hover:bg-background rounded-xl transition-colors border border-border"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <FaTimes size={18} /> : <FaBars size={18} />}
+            </button>
           </div>
-        )}
+        </div>
       </div>
-    </nav>
+
+      {/* Mobile Drawer Overlay */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-b border-border bg-surface/95 dark:bg-surface/95 backdrop-blur-xl animate-in slide-in-from-top duration-200 px-4 pt-3 pb-6 space-y-4">
+          <div className="space-y-1">
+            {activeLinks.map((link) => {
+              const Icon = link.icon;
+              const active = isActive(link.to);
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${
+                    active
+                      ? 'bg-primary text-white'
+                      : 'text-text-secondary hover:bg-background hover:text-text-primary'
+                  }`}
+                >
+                  {Icon && <Icon size={16} />}
+                  {link.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          {isAuthenticated ? (
+            <div className="pt-4 border-t border-border space-y-3">
+              <div className="flex items-center gap-3 px-2">
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover border" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+                    {user.name?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="font-bold text-sm text-text-primary">{user.name}</p>
+                  <p className="text-xs text-text-secondary">{user.email}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <Link
+                  to="/profile"
+                  className="flex items-center justify-center gap-2 text-xs font-semibold py-2.5 rounded-xl border border-border text-text-primary hover:bg-background"
+                >
+                  <FaUser size={12} /> Profile
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center gap-2 text-xs font-semibold py-2.5 rounded-xl bg-status-danger/10 text-status-danger hover:bg-status-danger/20"
+                >
+                  <FaSignOutAlt size={12} /> Logout
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="pt-3 border-t border-border grid grid-cols-2 gap-2">
+              <Link
+                to="/login"
+                className="text-center text-xs font-bold text-text-primary py-2.5 rounded-xl border border-border"
+              >
+                Log in
+              </Link>
+              <Link
+                to="/register"
+                className="text-center text-xs font-bold bg-primary text-white py-2.5 rounded-xl shadow-sm"
+              >
+                Sign up
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+    </header>
   );
 };
 

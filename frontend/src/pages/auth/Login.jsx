@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import useGoogleSignIn from '../../hooks/useGoogleSignIn';
 import FormInput from '../../components/FormInput';
+import ThemeToggle from '../../components/ui/ThemeToggle';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -83,17 +84,20 @@ const Login = () => {
   const googleButtonRef = useGoogleSignIn(handleGoogleCredential);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h1>
-        <p className="text-gray-500 mb-6">Log in to your MessMate account</p>
+    <div className="min-h-screen flex items-center justify-center bg-background text-text-primary px-4 py-10 transition-colors">
+      <div className="w-full max-w-md bg-surface border border-border rounded-3xl shadow-xl p-8">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-extrabold font-heading text-text-primary">Welcome back</h1>
+          <ThemeToggle />
+        </div>
+        <p className="text-text-secondary text-sm mb-6">Log in to your MessMate account</p>
 
         <div ref={googleButtonRef} className="mb-5 flex justify-center" />
 
         <div className="flex items-center gap-3 mb-5">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-gray-400">OR</span>
-          <div className="flex-1 h-px bg-gray-200" />
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-xs font-bold text-text-muted">OR</span>
+          <div className="flex-1 h-px bg-border" />
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
@@ -101,7 +105,7 @@ const Login = () => {
           <FormInput label="Password" name="password" type="password" value={formData.password} onChange={handleChange} error={errors.password} />
 
           <div className="text-right mb-4">
-            <Link to="/forgot-password" className="text-xs text-emerald-600 hover:underline">
+            <Link to="/forgot-password" className="text-xs font-bold text-primary hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -109,15 +113,15 @@ const Login = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white font-medium py-2.5 rounded-lg"
+            className="w-full bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-bold py-3 rounded-xl shadow-md transition-all"
           >
             {isSubmitting ? 'Logging in...' : 'Log In'}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-sm text-text-secondary mt-6">
           Don't have an account?{' '}
-          <Link to="/register" className="text-emerald-600 font-medium hover:underline">Sign up</Link>
+          <Link to="/register" className="text-primary font-bold hover:underline">Sign up</Link>
         </p>
       </div>
     </div>

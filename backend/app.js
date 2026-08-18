@@ -35,10 +35,19 @@ app.use(
   })
 );
 
-// CORS
+// CORS configuration allowing localhost and local network IP access
 app.use(
   cors({
-    origin: config.clientUrl,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl) or local network connections
+      if (!origin || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:") || origin.startsWith("http://192.168.") || origin.startsWith("http://172.")) {
+        return callback(null, true);
+      }
+      if (config.clientUrl && origin === config.clientUrl) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   })
 );
@@ -108,6 +117,19 @@ app.use(
 
 // Owner Dashboard
 app.use("/api/owner", require("./routes/ownerRoutes"));
+
+// Owner Attendance
+app.use("/api/owner", require("./routes/attendanceRoutes"));
+
+// Student Attendance
+app.use("/api/student/attendance", require("./routes/studentAttendanceRoutes"));
+app.use("/api/student/billing", require("./routes/studentBillingRoutes"));
+app.use("/api/student/payments", require("./routes/paymentRoutes"));
+
+// Owner Billing
+app.use("/api/owner", require("./routes/billingRoutes"));
+app.use("/api/owner", require("./routes/reportingRoutes"));
+app.use("/api/owner", require("./routes/exportRoutes"));
 
 /* =====================================================
    404 Handler

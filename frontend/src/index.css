@@ -1,3 +1,227 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ==========================================================================
+   MESSMATE DESIGN SYSTEM — CSS VARIABLES (LIGHT & DARK THEMES)
+   ========================================================================== */
+
+:root {
+  /* MessMate Light Theme Palette */
+  --primary: #059669;            /* Deep Forest Green */
+  --primary-dark: #047857;       /* Dark Emerald */
+  --primary-light: #10B981;      /* Bright Mint Green */
+  --secondary: #EA580C;          /* Warm Spice Orange */
+  --secondary-light: #F97316;    /* Vibrant Orange */
+  --accent: #84CC16;             /* Fresh Zesty Lime */
+  
+  --background: #FAFAF9;         /* Warm Off-white Cream */
+  --surface: #FFFFFF;            /* Pure White Card Surface */
+  --surface-elevated: #FFFFFF;   /* Elevated Card Surface */
+  
+  --text-primary: #1C1917;       /* Deep Charcoal Text */
+  --text-secondary: #78716C;     /* Muted Warm Stone Text */
+  --text-muted: #A8A29E;         /* Subtle Hint Text */
+  
+  --border: #E7E5E4;             /* Soft Stone Border */
+  --border-strong: #D6D3D1;      /* Strong Stone Border */
+  
+  --success: #10B981;            /* Success Green */
+  --warning: #F59E0B;            /* Amber Alert */
+  --danger: #EF4444;             /* Crimson Danger */
+  
+  /* Brand Shadows & Glows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+  --glow-primary: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+}
+
+.dark {
+  /* MessMate Dedicated Dark Theme Palette */
+  --primary: #10B981;            /* Vibrant Emerald Green */
+  --primary-dark: #059669;       /* Deep Emerald */
+  --primary-light: #34D399;      /* Bright Lime-Mint */
+  --secondary: #FB923C;          /* Warm Amber Orange */
+  --secondary-light: #FDBA74;    /* Light Orange Accent */
+  --accent: #A3E635;             /* Electric Lime */
+  
+  --background: #0C1017;         /* Deep Obsidian Charcoal */
+  --surface: #141A24;            /* Dark Charcoal Card */
+  --surface-elevated: #1E2634;   /* Elevated Dark Surface */
+  
+  --text-primary: #F8FAFC;       /* Crisp Off-White Text */
+  --text-secondary: #94A3B8;     /* Cool Gray Text */
+  --text-muted: #64748B;         /* Dark Gray Text */
+  
+  --border: #232D3F;             /* Dark Slate Border */
+  --border-strong: #334155;      /* Strong Slate Border */
+  
+  --success: #34D399;
+  --warning: #FBBF24;
+  --danger: #F87171;
+  
+  /* Dark Shadows & Glows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6);
+  --glow-primary: 0 0 30px -3px rgba(16, 185, 129, 0.3);
+}
+
+/* ==========================================================================
+   MODULE 2 — GLOBAL TYPOGRAPHY & EDITORIAL UTILITIES
+   ========================================================================== */
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--background);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+/* Typography Scale Classes */
+.text-display-2xl {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.text-display-xl {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(2.5rem, 5.5vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.text-editorial-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+/* Decorative Watermark Typography */
+.editorial-watermark {
+  position: absolute;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  user-select: none;
+  pointer-events: none;
+  opacity: 0.04;
+  line-height: 0.85;
+  color: currentColor;
+}
+
+.dark .editorial-watermark {
+  opacity: 0.03;
+}
+
+/* Floating Overlay Cards */
+.floating-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-xl);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.floating-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--glow-primary), var(--shadow-xl);
+}
+
+/* Horizontal Marquee Animation */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: 200%;
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+}
+
+.dark .glass-panel {
+  background: rgba(20, 26, 36, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Shimmer utility */
+.shimmer-bg {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--border);
+}
+
+.shimmer-bg::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.3) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 1.5s infinite;
+  content: '';
+}

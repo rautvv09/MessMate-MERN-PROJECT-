@@ -16,6 +16,29 @@ const connectDB = async () => {
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
 
+    // Fix googleId sparse unique index
+    try {
+      const User = require('../models/User');
+      await User.updateMany({ googleId: null }, { $unset: { googleId: 1 } });
+      const indexes = await User.collection.indexes().catch(() => []);
+      const googleIdIndexes = indexes.filter((index) => index.key.googleId === 1);
+      
+      const needsRebuild = googleIdIndexes.length === 0 || !googleIdIndexes.some(i => i.sparse);
+      
+      if (needsRebuild) {
+        if (googleIdIndexes.length > 0) {
+          await Promise.all(googleIdIndexes.map((index) => User.collection.dropIndex(index.name)));
+        }
+        await User.collection.createIndex(
+          { googleId: 1 },
+          { unique: true, sparse: true, name: 'googleId_1' }
+        );
+        console.log('Fixed googleId index successfully');
+      }
+    } catch (indexErr) {
+      console.error('Error fixing googleId index:', indexErr.message);
+    }
+
     mongoose.connection.on('error', (err) => {
       console.error(`MongoDB connection error after initial connect: ${err}`);
     });

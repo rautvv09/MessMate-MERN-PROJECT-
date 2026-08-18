@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import FormInput from '../../components/FormInput';
+import ThemeToggle from '../../components/ui/ThemeToggle';
 
 const CompleteGoogleSignup = () => {
   const navigate = useNavigate();
@@ -17,8 +18,6 @@ const CompleteGoogleSignup = () => {
   useEffect(() => {
     const stored = sessionStorage.getItem('pendingGoogleAuth');
     if (!stored) {
-      // Someone landed here directly without going through the Google button first —
-      // nothing to complete, send them back to a sensible starting point
       toast.error('No pending Google sign-in found. Please try again.');
       navigate('/login');
       return;
@@ -48,31 +47,34 @@ const CompleteGoogleSignup = () => {
     }
   };
 
-  if (!pendingAuth) return null; // brief flash before the redirect effect above fires
+  if (!pendingAuth) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8">
-        <div className="flex items-center gap-3 mb-6">
-          {pendingAuth.profile.avatarUrl && (
-            <img src={pendingAuth.profile.avatarUrl} alt="" className="w-12 h-12 rounded-full" />
-          )}
-          <div>
-            <p className="font-semibold text-gray-900">{pendingAuth.profile.name}</p>
-            <p className="text-sm text-gray-400">{pendingAuth.profile.email}</p>
+    <div className="min-h-screen flex items-center justify-center bg-background text-text-primary px-4 py-10 transition-colors">
+      <div className="w-full max-w-md bg-surface border border-border rounded-3xl shadow-xl p-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            {pendingAuth.profile.avatarUrl && (
+              <img src={pendingAuth.profile.avatarUrl} alt="" className="w-12 h-12 rounded-full border border-primary/30" />
+            )}
+            <div>
+              <p className="font-extrabold font-heading text-text-primary">{pendingAuth.profile.name}</p>
+              <p className="text-xs text-text-secondary">{pendingAuth.profile.email}</p>
+            </div>
           </div>
+          <ThemeToggle />
         </div>
 
-        <h1 className="text-lg font-bold text-gray-900 mb-1">One more step</h1>
-        <p className="text-gray-500 text-sm mb-6">Tell us how you'll use MessMate</p>
+        <h1 className="text-xl font-extrabold font-heading text-text-primary mb-1">One more step</h1>
+        <p className="text-text-secondary text-sm mb-6">Tell us how you'll use MessMate</p>
 
-        <div className="flex bg-gray-100 rounded-lg p-1 mb-5">
+        <div className="flex bg-background border border-border rounded-xl p-1 mb-5">
           <button type="button" onClick={() => { setRole('student'); setRoleDetails({}); }}
-            className={`flex-1 py-2 rounded-md text-sm font-medium ${role === 'student' ? 'bg-white shadow text-emerald-600' : 'text-gray-500'}`}>
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${role === 'student' ? 'bg-surface shadow-sm text-primary border border-border' : 'text-text-secondary hover:text-text-primary'}`}>
             Student
           </button>
           <button type="button" onClick={() => { setRole('owner'); setRoleDetails({}); }}
-            className={`flex-1 py-2 rounded-md text-sm font-medium ${role === 'owner' ? 'bg-white shadow text-emerald-600' : 'text-gray-500'}`}>
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${role === 'owner' ? 'bg-surface shadow-sm text-primary border border-border' : 'text-text-secondary hover:text-text-primary'}`}>
             Mess Owner
           </button>
         </div>
@@ -95,7 +97,7 @@ const CompleteGoogleSignup = () => {
           )}
 
           <button type="submit" disabled={isSubmitting}
-            className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white font-medium py-2.5 rounded-lg mt-2">
+            className="w-full bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-bold py-3 rounded-xl shadow-md transition-all mt-2">
             {isSubmitting ? 'Creating account...' : 'Complete Signup'}
           </button>
         </form>

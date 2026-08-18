@@ -1,6 +1,40 @@
 const MessListing = require('../models/MessListing');
+const Menu = require('../models/Menu');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
+
+// Helper to derive valid GeoJSON coordinates [longitude, latitude]
+const getCoordinatesForAddress = (address, city, longitude, latitude) => {
+  if (
+    longitude !== undefined &&
+    latitude !== undefined &&
+    longitude !== '' &&
+    latitude !== '' &&
+    !isNaN(Number(longitude)) &&
+    !isNaN(Number(latitude))
+  ) {
+    return [Number(longitude), Number(latitude)];
+  }
+
+  const cityCoordinatesMap = {
+    ichalkaranji: [74.4595, 16.6976],
+    kolhapur: [74.2433, 16.7050],
+    pune: [73.8567, 18.5204],
+    mumbai: [72.8777, 19.0760],
+    sangli: [74.5752, 16.8524],
+    satara: [73.9903, 17.6805],
+    solapur: [75.9064, 17.6599],
+    delhi: [77.1025, 28.7041],
+    bangalore: [77.5946, 12.9716],
+  };
+
+  const normalizedCity = String(city || '').trim().toLowerCase();
+  if (cityCoordinatesMap[normalizedCity]) {
+    return cityCoordinatesMap[normalizedCity];
+  }
+
+  return [74.4595, 16.6976];
+};
 
 // @desc    Create a new mess listing
 // @route   POST /api/messes
@@ -11,9 +45,15 @@ exports.createMess = catchAsync(async (req, res) => {
     totalSeats, facilities, tags, nearbyColleges,
   } = req.body;
 
+  const coordinates = getCoordinatesForAddress(address, city, longitude, latitude);
+
   const messData = {
     ownerId: req.user._id,
     name, description, foodType, address, city,
+    location: {
+      type: 'Point',
+      coordinates,
+    },
     pricing: { baseFee, deposit, registrationFee },
     totalSeats,
     facilities,
@@ -21,11 +61,10 @@ exports.createMess = catchAsync(async (req, res) => {
     nearbyColleges,
   };
 
-  if (longitude !== undefined && latitude !== undefined) {
-    messData.location = { type: 'Point', coordinates: [longitude, latitude] };
-  }
-
   const mess = await MessListing.create(messData);
+
+  // Create an empty menu for this mess immediately — enforces the 1:1 relationship
+  await Menu.create({ messId: mess._id, lastUpdatedBy: req.user._id });
 
   res.status(201).json({ success: true, data: { mess } });
 });
@@ -75,7 +114,7 @@ exports.getAllMesses = catchAsync(async (req, res) => {
     rating: { 'rating.average': -1 },
     newest: { createdAt: -1 },
   };
-  const sortBy = sortOptions[sort] || { 'rating.average': -1, createdAt: -1 }; // default: recommended
+  const sortBy = sortOptions[sort] || { 'rating.average': -1, createdAt: -1 };
 
   const skip = (Number(page) - 1) * Number(limit);
 
@@ -131,10 +170,19 @@ exports.updateMess = catchAsync(async (req, res, next) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
 
-  // pricing sub-fields, updated individually — same dot-notation reasoning as User profile updates
   ['baseFee', 'deposit', 'registrationFee'].forEach((field) => {
     if (req.body[field] !== undefined) updates[`pricing.${field}`] = req.body[field];
   });
+
+  if (req.body.longitude !== undefined || req.body.latitude !== undefined || req.body.address || req.body.city) {
+    const coordinates = getCoordinatesForAddress(
+      req.body.address,
+      req.body.city,
+      req.body.longitude,
+      req.body.latitude
+    );
+    updates.location = { type: 'Point', coordinates };
+  }
 
   const mess = await MessListing.findOneAndUpdate(
     { _id: req.params.id, ownerId: req.user._id },
@@ -163,36 +211,4 @@ exports.deleteMess = catchAsync(async (req, res, next) => {
   }
 
   res.status(200).json({ success: true, message: 'Mess listing removed', data: null });
-});
-
-
-const Menu = require('../models/Menu'); // add this import at the top of the file
-
-exports.createMess = catchAsync(async (req, res) => {
-  const {
-    name, description, foodType, address, city,
-    longitude, latitude, baseFee, deposit, registrationFee,
-    totalSeats, facilities, tags, nearbyColleges,
-  } = req.body;
-
-  const messData = {
-    ownerId: req.user._id,
-    name, description, foodType, address, city,
-    pricing: { baseFee, deposit, registrationFee },
-    totalSeats,
-    facilities,
-    tags,
-    nearbyColleges,
-  };
-
-  if (longitude !== undefined && latitude !== undefined) {
-    messData.location = { type: 'Point', coordinates: [longitude, latitude] };
-  }
-
-  const mess = await MessListing.create(messData);
-
-  // Create an empty menu for this mess immediately — enforces the 1:1 relationship
-  await Menu.create({ messId: mess._id, lastUpdatedBy: req.user._id });
-
-  res.status(201).json({ success: true, data: { mess } });
 });

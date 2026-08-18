@@ -92,6 +92,92 @@ exports.login = catchAsync(async (req, res, next) => {
   await sendAuthSuccess(user, res, 200);
 });
 
+// @desc    Authenticate via Google OAuth
+// @route   POST /api/auth/google
+exports.googleAuth = catchAsync(async (req, res, next) => {
+  const { idToken, role, roleDetails } = req.body;
+
+  if (!idToken) {
+    return next(new AppError('Google ID token is required', 400));
+  }
+
+  const verifyGoogleToken = require('../utils/googleVerify');
+  const googleProfile = await verifyGoogleToken(idToken);
+
+  const { googleId, email, name, avatarUrl } = googleProfile;
+
+  // 1. Try to find user by googleId
+  let user = await User.findOne({ googleId }).select('+refreshTokens');
+
+  if (user) {
+    if (!user.isActive) {
+      return next(new AppError('This account has been deactivated', 403));
+    }
+    user.lastLoginAt = new Date();
+    await user.save({ validateBeforeSave: false });
+    return sendAuthSuccess(user, res, 200);
+  }
+
+  // 2. Try to find user by email (linked account)
+  user = await User.findOne({ email }).select('+refreshTokens');
+
+  if (user) {
+    if (!user.isActive) {
+      return next(new AppError('This account has been deactivated', 403));
+    }
+    user.googleId = googleId;
+    if (!user.avatarUrl) {
+      user.avatarUrl = avatarUrl;
+    }
+    user.isEmailVerified = true;
+    user.lastLoginAt = new Date();
+    await user.save({ validateBeforeSave: false });
+    return sendAuthSuccess(user, res, 200);
+  }
+
+  // 3. User does not exist, role selection is required
+  if (!role) {
+    return res.status(200).json({
+      success: true,
+      requiresRoleSelection: true,
+      data: {
+        googleProfile: {
+          name,
+          email,
+          avatarUrl,
+        },
+      },
+    });
+  }
+
+  if (!['student', 'owner'].includes(role)) {
+    return next(new AppError('Invalid role selection', 400));
+  }
+
+  if (role === 'student') {
+    if (!roleDetails?.college || !roleDetails?.city) {
+      return next(new AppError('College and City are required for student signup', 400));
+    }
+  } else if (role === 'owner') {
+    if (!roleDetails?.businessName || !roleDetails?.address) {
+      return next(new AppError('Business Name and Address are required for owner signup', 400));
+    }
+  }
+
+  user = await User.create({
+    name,
+    email,
+    googleId,
+    avatarUrl,
+    role,
+    roleDetails: roleDetails || {},
+    isEmailVerified: true,
+    lastLoginAt: new Date(),
+  });
+
+  return sendAuthSuccess(user, res, 201);
+});
+
 
 const jwt = require('jsonwebtoken');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens');

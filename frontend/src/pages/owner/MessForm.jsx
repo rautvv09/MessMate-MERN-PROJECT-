@@ -60,6 +60,26 @@ const MessForm = () => {
     if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: null });
   };
 
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData((prev) => ({
+          ...prev,
+          longitude: position.coords.longitude,
+          latitude: position.coords.latitude,
+        }));
+        toast.success('Location detected!');
+      },
+      () => {
+        toast.error('Could not detect location.');
+      }
+    );
+  };
+
   const validate = () => {
     const newErrors = {};
     const required = ['name', 'description', 'address', 'city', 'baseFee', 'totalSeats'];
@@ -124,48 +144,62 @@ const MessForm = () => {
     }
   };
 
-  if (isLoading) return <p className="text-center py-16 text-gray-400">Loading...</p>;
+  if (isLoading) return <p className="text-center py-16 text-text-secondary">Loading...</p>;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
+      <h1 className="text-2xl font-extrabold font-heading text-text-primary mb-6">
         {isEditMode ? 'Edit Mess Listing' : 'Add a New Mess'}
       </h1>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6">
-        <h3 className="font-semibold text-gray-800 mb-3">Basic Information</h3>
+      <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+        <h3 className="font-extrabold font-heading text-text-primary text-base mb-3">Basic Information</h3>
         <FormInput label="Mess Name" name="name" value={formData.name} onChange={handleChange} error={errors.name} />
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-        <textarea
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          rows={3}
-          className={`w-full px-3 py-2 border rounded-lg mb-4 text-sm ${errors.description ? 'border-red-400' : 'border-gray-300'}`}
-        />
+        <div>
+          <label className="block text-xs font-bold text-text-primary mb-1">Description</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            rows={3}
+            className={`w-full px-3 py-2 bg-background border rounded-xl text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 ${errors.description ? 'border-status-danger' : 'border-border'}`}
+          />
+        </div>
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">Food Type</label>
-        <select
-          name="foodType"
-          value={formData.foodType}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 text-sm"
-        >
-          <option value="veg">Veg</option>
-          <option value="non-veg">Non-Veg</option>
-          <option value="both">Both</option>
-        </select>
+        <div>
+          <label className="block text-xs font-bold text-text-primary mb-1">Food Type</label>
+          <select
+            name="foodType"
+            value={formData.foodType}
+            onChange={handleChange}
+            className="w-full px-3 py-2 bg-background border border-border rounded-xl text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="veg" className="bg-surface text-text-primary">Veg</option>
+            <option value="non-veg" className="bg-surface text-text-primary">Non-Veg</option>
+            <option value="both" className="bg-surface text-text-primary">Both</option>
+          </select>
+        </div>
 
         <FormInput label="Address" name="address" value={formData.address} onChange={handleChange} error={errors.address} />
         <FormInput label="City" name="city" value={formData.city} onChange={handleChange} error={errors.city} />
 
+        <div className="flex items-center justify-between pt-2">
+          <label className="block text-xs font-bold text-text-primary">Location Coordinates (Optional)</label>
+          <button
+            type="button"
+            onClick={handleDetectLocation}
+            className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
+          >
+            Use Current Location
+          </button>
+        </div>
         <div className="grid grid-cols-2 gap-3">
-          <FormInput label="Longitude (optional)" name="longitude" type="number" step="any" value={formData.longitude} onChange={handleChange} />
-          <FormInput label="Latitude (optional)" name="latitude" type="number" step="any" value={formData.latitude} onChange={handleChange} />
+          <FormInput label="Longitude" name="longitude" type="number" step="any" value={formData.longitude} onChange={handleChange} />
+          <FormInput label="Latitude" name="latitude" type="number" step="any" value={formData.latitude} onChange={handleChange} />
         </div>
 
-        <h3 className="font-semibold text-gray-800 mb-3 mt-6">Pricing</h3>
+        <h3 className="font-extrabold font-heading text-text-primary text-base pt-4 border-t border-border">Pricing</h3>
         <div className="grid grid-cols-3 gap-3">
           <FormInput label="Base Fee (₹/mo)" name="baseFee" type="number" value={formData.baseFee} onChange={handleChange} error={errors.baseFee} />
           <FormInput label="Deposit (₹)" name="deposit" type="number" value={formData.deposit} onChange={handleChange} />
@@ -174,13 +208,13 @@ const MessForm = () => {
 
         <FormInput label="Total Seats" name="totalSeats" type="number" value={formData.totalSeats} onChange={handleChange} error={errors.totalSeats} />
 
-        <h3 className="font-semibold text-gray-800 mb-3 mt-6">Facilities</h3>
+        <h3 className="font-extrabold font-heading text-text-primary text-base pt-4 border-t border-border">Facilities</h3>
         <FacilitiesCheckboxGrid
           selected={formData.facilities}
           onChange={(facilities) => setFormData({ ...formData, facilities })}
         />
 
-        <h3 className="font-semibold text-gray-800 mb-3 mt-6">Additional Details</h3>
+        <h3 className="font-extrabold font-heading text-text-primary text-base pt-4 border-t border-border">Additional Details</h3>
         <FormInput
           label="Tags (comma-separated)"
           name="tags"
@@ -199,7 +233,7 @@ const MessForm = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white font-medium py-2.5 rounded-lg mt-4"
+          className="w-full bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-bold py-3 rounded-xl shadow-md transition-all mt-4"
         >
           {isSubmitting ? 'Saving...' : isEditMode ? 'Save Changes' : 'Create Mess Listing'}
         </button>

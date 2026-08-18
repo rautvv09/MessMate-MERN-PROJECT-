@@ -3,7 +3,8 @@ const config = require('../config/env');
 const { passwordResetEmailTemplate } = require('./emailTemplates');
 
 const sendPasswordResetEmail = async (toEmail, name, rawToken) => {
-  const resetUrl = `${config.clientUrl}/reset-password?token=${rawToken}`;
+  const baseUrl = config.frontendUrl || config.clientUrl;
+  const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
 
   await transporter.sendMail({
     from: config.smtp.from,

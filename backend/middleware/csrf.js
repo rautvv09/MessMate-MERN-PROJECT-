@@ -14,6 +14,8 @@ exports.issueCsrfToken = (req, res, next) => {
       sameSite: 'lax',
       path: '/',
     });
+    if (!req.cookies) req.cookies = {};
+    req.cookies[CSRF_COOKIE_NAME] = token;
   }
   next();
 };
@@ -24,6 +26,14 @@ exports.issueCsrfToken = (req, res, next) => {
 exports.verifyCsrfToken = (req, res, next) => {
   const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
   if (safeMethods.includes(req.method)) return next();
+
+  // Exempt public auth endpoints that use one-time cryptographic tokens
+  const exemptPaths = [
+    '/api/auth/verify-email',
+    '/api/auth/resend-verification',
+    '/api/auth/reset-password',
+  ];
+  if (exemptPaths.includes(req.path)) return next();
 
   const cookieToken = req.cookies?.[CSRF_COOKIE_NAME];
   const headerToken = req.headers[CSRF_HEADER_NAME];

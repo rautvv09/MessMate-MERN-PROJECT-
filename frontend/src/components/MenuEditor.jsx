@@ -5,8 +5,6 @@ import { updateDayMenu, updateBreakfast } from '../services/menuService';
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const DAY_LABELS = { monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday' };
 
-// Converts a newline-separated textarea value into a clean array of items,
-// mirroring the same "text field <-> array" conversion used for Tags on the Mess Form
 const parseItems = (text) => text.split('\n').map((i) => i.trim()).filter(Boolean);
 
 const MenuEditor = ({ messId, menu, onMenuChange }) => {
@@ -56,9 +54,9 @@ const MenuEditor = ({ messId, menu, onMenuChange }) => {
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <label className="text-sm font-semibold text-gray-800 block mb-2">
+    <div className="space-y-6">
+      <div className="bg-background border border-border rounded-2xl p-5">
+        <label className="text-xs font-bold text-text-primary block mb-2">
           Breakfast (same every day)
         </label>
         <textarea
@@ -66,62 +64,64 @@ const MenuEditor = ({ messId, menu, onMenuChange }) => {
           onChange={(e) => setBreakfastText(e.target.value)}
           rows={3}
           placeholder={'One item per line\ne.g. Poha\nTea'}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2"
+          className="w-full px-3 py-2 bg-surface border border-border text-text-primary placeholder:text-text-muted rounded-xl text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         <button
           onClick={handleSaveBreakfast}
           disabled={isSaving}
-          className="text-sm bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 text-white px-4 py-1.5 rounded-lg"
+          className="text-xs bg-surface border border-border hover:border-primary text-text-primary font-bold px-4 py-2 rounded-xl transition-all shadow-xs"
         >
           Save Breakfast
         </button>
       </div>
 
-      <div className="flex gap-1 mb-4 overflow-x-auto">
-        {DAYS.map((day) => (
-          <button
-            key={day}
-            onClick={() => switchDay(day)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium shrink-0 ${
-              activeDay === day ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-600'
-            }`}
-          >
-            {DAY_LABELS[day].slice(0, 3)}
-          </button>
-        ))}
-      </div>
-
-      <p className="text-sm font-semibold text-gray-800 mb-2">{DAY_LABELS[activeDay]}</p>
-      <div className="grid grid-cols-2 gap-4 mb-3">
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Lunch</label>
-          <textarea
-            value={dayText.lunch}
-            onChange={(e) => setDayText({ ...dayText, lunch: e.target.value })}
-            rows={4}
-            placeholder={'One item per line'}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-          />
+      <div>
+        <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
+          {DAYS.map((day) => (
+            <button
+              key={day}
+              onClick={() => switchDay(day)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition-all ${
+                activeDay === day ? 'bg-primary text-white shadow-xs' : 'bg-background text-text-secondary hover:text-text-primary border border-border'
+              }`}
+            >
+              {DAY_LABELS[day].slice(0, 3)}
+            </button>
+          ))}
         </div>
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Dinner</label>
-          <textarea
-            value={dayText.dinner}
-            onChange={(e) => setDayText({ ...dayText, dinner: e.target.value })}
-            rows={4}
-            placeholder={'One item per line'}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-          />
-        </div>
-      </div>
 
-      <button
-        onClick={handleSaveDay}
-        disabled={isSaving}
-        className="text-sm bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white px-4 py-1.5 rounded-lg"
-      >
-        Save {DAY_LABELS[activeDay]}'s Menu
-      </button>
+        <h4 className="text-sm font-extrabold font-heading text-text-primary mb-3">{DAY_LABELS[activeDay]} Menu</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="text-xs font-bold text-text-secondary block mb-1">Lunch</label>
+            <textarea
+              value={dayText.lunch}
+              onChange={(e) => setDayText({ ...dayText, lunch: e.target.value })}
+              rows={4}
+              placeholder={'One item per line'}
+              className="w-full px-3 py-2 bg-background border border-border text-text-primary placeholder:text-text-muted rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-text-secondary block mb-1">Dinner</label>
+            <textarea
+              value={dayText.dinner}
+              onChange={(e) => setDayText({ ...dayText, dinner: e.target.value })}
+              rows={4}
+              placeholder={'One item per line'}
+              className="w-full px-3 py-2 bg-background border border-border text-text-primary placeholder:text-text-muted rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={handleSaveDay}
+          disabled={isSaving}
+          className="text-xs bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-md"
+        >
+          Save {DAY_LABELS[activeDay]}'s Menu
+        </button>
+      </div>
     </div>
   );
 };

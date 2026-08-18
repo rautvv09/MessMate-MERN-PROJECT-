@@ -21,12 +21,12 @@ const FacilitiesGrid = ({ facilities = [] }) => {
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {facilities.map((key) => {
         const config = FACILITY_CONFIG[key];
-        if (!config) return null; // guards against an unrecognized value slipping through
+        if (!config) return null;
         const Icon = config.icon;
         return (
-          <div key={key} className="flex flex-col items-center gap-1.5 p-3 bg-gray-50 rounded-lg">
-            <Icon className="text-emerald-600" size={20} />
-            <span className="text-xs text-gray-600 text-center">{config.label}</span>
+          <div key={key} className="flex flex-col items-center gap-2 p-3.5 bg-background border border-border rounded-2xl">
+            <Icon className="text-primary" size={20} />
+            <span className="text-xs font-bold text-text-primary text-center">{config.label}</span>
           </div>
         );
       })}
@@ -34,5 +34,4 @@ const FacilitiesGrid = ({ facilities = [] }) => {
   );
 };
 
-const FacilitiesGridExport = FacilitiesGrid;
-export default FacilitiesGridExport;
+export default FacilitiesGrid;

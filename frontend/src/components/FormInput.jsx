@@ -1,7 +1,7 @@
 const FormInput = ({ label, name, type = 'text', value, onChange, error, ...rest }) => {
   return (
     <div className="mb-4">
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor={name} className="block text-sm font-medium text-text-primary mb-1">
         {label}
       </label>
       <input
@@ -10,14 +10,14 @@ const FormInput = ({ label, name, type = 'text', value, onChange, error, ...rest
         type={type}
         value={value}
         onChange={onChange}
-        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+        className={`w-full px-3 py-2 border rounded-lg bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 transition-colors ${
           error
-            ? 'border-red-400 focus:ring-red-300'
-            : 'border-gray-300 focus:ring-emerald-400'
+            ? 'border-status-danger focus:ring-status-danger/30'
+            : 'border-border focus:ring-primary/30 focus:border-primary'
         }`}
         {...rest}
       />
-      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+      {error && <p className="mt-1 text-sm text-status-danger">{error}</p>}
     </div>
   );
 };
