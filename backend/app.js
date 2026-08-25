@@ -6,6 +6,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const hpp = require("hpp");
+const path = require("path");
 
 const config = require("./config/env");
 const errorHandler = require("./middleware/errorHandler");
@@ -130,6 +131,21 @@ app.use("/api/student/payments", require("./routes/paymentRoutes"));
 app.use("/api/owner", require("./routes/billingRoutes"));
 app.use("/api/owner", require("./routes/reportingRoutes"));
 app.use("/api/owner", require("./routes/exportRoutes"));
+
+/* =====================================================
+   Serve Frontend in Production
+===================================================== */
+
+if (config.nodeEnv === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+    res.sendFile(path.resolve(__dirname, "../frontend", "dist", "index.html"));
+  });
+}
 
 /* =====================================================
    404 Handler
