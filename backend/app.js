@@ -142,7 +142,7 @@ const frontendDistPath = path.join(__dirname, "../frontend/dist");
 if (config.nodeEnv === "production" || fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
 
-  app.get("*", (req, res, next) => {
+  app.get("(.*)", (req, res, next) => {
     if (req.path.startsWith("/api")) {
       return next();
     }
