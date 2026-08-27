@@ -1,9 +1,12 @@
 require('dotenv').config();
 
-const requiredVars = [
+const coreRequiredVars = [
   'MONGO_URI',
   'JWT_ACCESS_SECRET',
   'JWT_REFRESH_SECRET',
+];
+
+const optionalVars = [
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
   'SMTP_HOST',
@@ -14,12 +17,17 @@ const requiredVars = [
   'CLOUDINARY_API_SECRET',
 ];
 
-const missing = requiredVars.filter((key) => !process.env[key]);
-
-if (missing.length > 0) {
-  console.error('FATAL ERROR: Missing required environment variables:');
-  missing.forEach((key) => console.error(`  - ${key}`));
+const missingCore = coreRequiredVars.filter((key) => !process.env[key]);
+if (missingCore.length > 0) {
+  console.error('FATAL ERROR: Missing core environment variables:');
+  missingCore.forEach((key) => console.error(`  - ${key}`));
   process.exit(1);
+}
+
+const missingOptional = optionalVars.filter((key) => !process.env[key]);
+if (missingOptional.length > 0) {
+  console.warn('WARNING: Missing optional integration environment variables:');
+  missingOptional.forEach((key) => console.warn(`  - ${key}`));
 }
 
 module.exports = {
