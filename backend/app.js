@@ -22,10 +22,12 @@ const app = express();
 // Secure HTTP headers
 app.use(
   helmet({
-    contentSecurityPolicy:
-      config.nodeEnv === "production" ? undefined : false,
+    contentSecurityPolicy: false,
     crossOriginResourcePolicy: {
       policy: "cross-origin",
+    },
+    crossOriginOpenerPolicy: {
+      policy: "same-origin-allow-popups",
     },
   })
 );
