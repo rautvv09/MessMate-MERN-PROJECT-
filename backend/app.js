@@ -142,11 +142,11 @@ const frontendDistPath = path.join(__dirname, "../frontend/dist");
 if (config.nodeEnv === "production" || fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
 
-  app.get("(.*)", (req, res, next) => {
-    if (req.path.startsWith("/api")) {
-      return next();
+  app.use((req, res, next) => {
+    if (req.method === "GET" && !req.path.startsWith("/api")) {
+      return res.sendFile(path.resolve(frontendDistPath, "index.html"));
     }
-    res.sendFile(path.resolve(frontendDistPath, "index.html"));
+    next();
   });
 }
 
