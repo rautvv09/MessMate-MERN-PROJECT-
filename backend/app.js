@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const hpp = require("hpp");
 const path = require("path");
+const fs = require("fs");
 
 const config = require("./config/env");
 const errorHandler = require("./middleware/errorHandler");
@@ -133,17 +134,19 @@ app.use("/api/owner", require("./routes/reportingRoutes"));
 app.use("/api/owner", require("./routes/exportRoutes"));
 
 /* =====================================================
-   Serve Frontend in Production
+   Serve Frontend in Production / Built State
 ===================================================== */
 
-if (config.nodeEnv === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+const frontendDistPath = path.join(__dirname, "../frontend/dist");
+
+if (config.nodeEnv === "production" || fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
 
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api")) {
       return next();
     }
-    res.sendFile(path.resolve(__dirname, "../frontend", "dist", "index.html"));
+    res.sendFile(path.resolve(frontendDistPath, "index.html"));
   });
 }
 
