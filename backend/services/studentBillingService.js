@@ -8,6 +8,30 @@ const AppError = require('../utils/AppError');
  * @param {Object} filters - Optional filters (year, month, paymentStatus)
  */
 const getMyBills = async (studentId, filters = {}) => {
+  const Booking = require('../models/Booking');
+  const { syncStudentBill } = require('./studentAttendanceService');
+
+  // Auto-sync bills for confirmed bookings so students immediately see active/completed month invoices
+  const activeBookings = await Booking.find({ studentId, status: 'confirmed' }).populate('messId');
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // 1-12
+
+  let prevMonth = currentMonth - 1;
+  let prevYear = currentYear;
+  if (prevMonth < 1) {
+    prevMonth = 12;
+    prevYear -= 1;
+  }
+
+  for (const booking of activeBookings) {
+    if (booking.messId) {
+      await syncStudentBill(booking, prevYear, prevMonth);
+      await syncStudentBill(booking, currentYear, currentMonth);
+    }
+  }
+
   const query = { studentId };
 
   if (filters.year) query['billingPeriod.year'] = parseInt(filters.year, 10);
@@ -16,7 +40,7 @@ const getMyBills = async (studentId, filters = {}) => {
 
   const bills = await Bill.find(query)
     .populate('messId', 'name address city')
-    .sort({ createdAt: -1 });
+    .sort({ 'billingPeriod.year': -1, 'billingPeriod.month': -1, createdAt: -1 });
 
   return bills;
 };

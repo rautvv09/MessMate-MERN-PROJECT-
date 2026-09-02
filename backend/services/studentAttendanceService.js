@@ -314,7 +314,7 @@ const markStudentAttendance = async (studentId, { bookingId, date, status, break
 };
 
 /**
- * Helper to sync or create monthly bill for student so owner section reflects it immediately
+ * Helper to sync or create monthly bill for student so owner and student sections reflect it immediately
  */
 const syncStudentBill = async (booking, year, month) => {
   try {
@@ -327,12 +327,37 @@ const syncStudentBill = async (booking, year, month) => {
     const endDate = new Date(year, month, 0);
     endDate.setHours(23, 59, 59, 999);
 
-    const mealCounts = await Attendance.getBillingMealCounts(booking._id, startDate, endDate);
+    const calendarDays = await getMonthlyCalendar(booking.studentId, booking._id, year, month);
+    const billableStatuses = ['present', 'late'];
+
+    let breakfastCount = 0;
+    let lunchCount = 0;
+    let dinnerCount = 0;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    calendarDays.forEach((d) => {
+      const dDate = new Date(d.date);
+      dDate.setHours(0, 0, 0, 0);
+      if (dDate <= today || year < today.getFullYear() || (year === today.getFullYear() && month < (today.getMonth() + 1))) {
+        if (billableStatuses.includes(d.breakfast)) breakfastCount++;
+        if (billableStatuses.includes(d.lunch)) lunchCount++;
+        if (billableStatuses.includes(d.dinner)) dinnerCount++;
+      }
+    });
+
+    const mealCounts = {
+      breakfastCount,
+      lunchCount,
+      dinnerCount,
+      totalMeals: breakfastCount + lunchCount + dinnerCount,
+    };
 
     const priceSnapshot = {
       breakfastPrice: mess.mealPricing?.breakfast || 40,
-      lunchPrice: mess.mealPricing?.lunch || 80,
-      dinnerPrice: mess.mealPricing?.dinner || 80,
+      lunchPrice: mess.mealPricing?.lunch || 70,
+      dinnerPrice: mess.mealPricing?.dinner || 70,
       gstPercentage: mess.mealPricing?.gstPercentage || 0,
     };
 
@@ -354,22 +379,25 @@ const syncStudentBill = async (booking, year, month) => {
     });
 
     if (bill) {
-      bill.mealCounts = mealCounts;
-      bill.breakfastTotal = breakfastTotal;
-      bill.lunchTotal = lunchTotal;
-      bill.dinnerTotal = dinnerTotal;
-      bill.mealSubtotal = mealSubtotal;
-      bill.subtotal = subtotal;
-      bill.taxableAmount = taxableAmount;
-      bill.gstAmount = gstAmount;
-      bill.totalAmount = totalAmount;
-      await bill.save();
-    } else {
+      // Don't overwrite paid bills
+      if (bill.paymentStatus !== 'paid') {
+        bill.mealCounts = mealCounts;
+        bill.breakfastTotal = breakfastTotal;
+        bill.lunchTotal = lunchTotal;
+        bill.dinnerTotal = dinnerTotal;
+        bill.mealSubtotal = mealSubtotal;
+        bill.subtotal = subtotal;
+        bill.taxableAmount = taxableAmount;
+        bill.gstAmount = gstAmount;
+        bill.totalAmount = totalAmount;
+        await bill.save();
+      }
+    } else if (totalAmount > 0 || mealCounts.totalMeals > 0) {
       await Bill.create({
         studentId: booking.studentId,
         bookingId: booking._id,
         messId: mess._id,
-        generatedBy: mess.ownerId,
+        generatedBy: mess.ownerId || booking.studentId,
         billingPeriod: { year, month, startDate, endDate },
         mealCounts,
         priceSnapshot,
@@ -397,4 +425,5 @@ module.exports = {
   getMonthlyCalendar,
   getAttendanceHistory,
   markStudentAttendance,
+  syncStudentBill,
 };
