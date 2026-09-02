@@ -89,6 +89,23 @@ exports.billNotificationTemplate = (studentName, messName, billNumber, totalAmou
     dashboardUrl
   );
 
+exports.ownerBillNotificationTemplate = (ownerName, studentName, messName, billNumber, totalAmount, dueDate, dashboardUrl) =>
+  baseTemplate(
+    `Monthly Bill Generated - ${billNumber}`,
+    `
+    <p>Hi ${ownerName},</p>
+    <p>A new monthly bill (<strong>${billNumber}</strong>) of <strong>₹${totalAmount.toFixed(2)}</strong> has been generated for student <strong>${studentName}</strong> at <strong>${messName}</strong>.</p>
+    <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 15px 0;">
+      <p style="margin: 0 0 10px 0;"><strong>Student:</strong> ${studentName}</p>
+      <p style="margin: 0 0 10px 0;"><strong>Total Amount:</strong> ₹${totalAmount.toFixed(2)}</p>
+      <p style="margin: 0;"><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>
+    </div>
+    <p>You can manage and track payments for all generated bills in your owner billing dashboard.</p>
+    `,
+    'View Billing Dashboard',
+    dashboardUrl
+  );
+
 exports.attendanceReminderTemplate = (ownerName, messName, dashboardUrl) =>
   baseTemplate(
     `Attendance Reminder`,

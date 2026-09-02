@@ -18,6 +18,7 @@ const {
   getBillById,
   updatePaymentStatus,
   downloadBillPDF,
+  generateBatchMessBills,
 } = require('../controllers/billingController');
 
 const router = express.Router();
@@ -54,6 +55,12 @@ router.post(
   generateBillValidation,
   validate,
   generateBill
+);
+
+// POST /api/owner/messes/:messId/billing/batch-generate
+router.post(
+  '/messes/:messId/billing/batch-generate',
+  generateBatchMessBills
 );
 
 // ==================== BILL MANAGEMENT ====================

@@ -8,6 +8,7 @@ const {
   getBillById,
   updatePaymentStatus,
   getBillableBookings,
+  generateBatchMessBills,
 } = require('../services/billingService');
 
 // @desc    Get meal pricing for a mess
@@ -73,6 +74,23 @@ exports.generateBill = catchAsync(async (req, res) => {
     success: true,
     message: `Bill ${bill.billNumber} generated successfully`,
     data: bill,
+  });
+});
+
+// @desc    Generate batch monthly bills for all billable students in a mess
+// @route   POST /api/owner/messes/:messId/billing/batch-generate
+// @access  Owner only
+exports.generateBatchMessBills = catchAsync(async (req, res) => {
+  const { year, month } = req.body;
+  const currentYear = year ? parseInt(year, 10) : new Date().getFullYear();
+  const currentMonth = month ? parseInt(month, 10) : new Date().getMonth() + 1;
+
+  const result = await generateBatchMessBills(req.params.messId, req.user._id, currentYear, currentMonth);
+
+  res.status(200).json({
+    success: true,
+    message: `Batch billing complete: ${result.generatedCount} bill(s) generated.`,
+    data: result,
   });
 });
 
