@@ -16,27 +16,22 @@ const getStudentBookings = async (studentId) => {
     .populate('messId', 'name city address')
     .sort({ createdAt: -1 });
 
-  return bookings.map((booking) => ({
-    bookingId: booking._id,
-    messId: booking.messId._id,
-    messName: booking.messId.name,
-    messCity: booking.messId.city,
-    planType: booking.planType,
-    joiningDate: booking.joiningDate,
-  }));
+  return bookings
+    .filter((booking) => booking.messId != null)
+    .map((booking) => ({
+      bookingId: booking._id,
+      messId: booking.messId._id,
+      messName: booking.messId.name,
+      messCity: booking.messId.city,
+      planType: booking.planType,
+      joiningDate: booking.joiningDate,
+    }));
 };
 
 /**
  * Get monthly attendance statistics for a student at a specific mess.
- * Uses the Attendance model's getStudentStats aggregation pipeline.
- *
- * @param {string} studentId - The student's user ID
- * @param {string} bookingId - The booking ID (scopes to a specific mess)
- * @param {number} year      - Calendar year (e.g. 2026)
- * @param {number} month     - Calendar month (1-12)
  */
 const getMonthlyStats = async (studentId, bookingId, year, month) => {
-  // Validate the booking belongs to this student
   const booking = await Booking.findOne({
     _id: bookingId,
     studentId,
@@ -46,41 +41,85 @@ const getMonthlyStats = async (studentId, bookingId, year, month) => {
     throw new AppError('Booking not found or does not belong to you', 404);
   }
 
-  // Build the date range for the requested month
-  const startDate = new Date(year, month - 1, 1); // First day of month
-  startDate.setHours(0, 0, 0, 0);
+  const validYear = parseInt(year, 10) || new Date().getFullYear();
+  const validMonth = parseInt(month, 10) || (new Date().getMonth() + 1);
 
-  const endDate = new Date(year, month, 0); // Last day of month
-  endDate.setHours(23, 59, 59, 999);
+  const calendarDays = await getMonthlyCalendar(studentId, bookingId, validYear, validMonth);
 
-  const stats = await Attendance.getStudentStats(studentId, startDate, endDate);
+  const billableStatuses = ['present', 'late'];
+
+  let totalDays = 0;
+  let breakfastTaken = 0;
+  let lunchTaken = 0;
+  let dinnerTaken = 0;
+  let breakfastMissed = 0;
+  let lunchMissed = 0;
+  let dinnerMissed = 0;
+  let leaveDays = 0;
+  let holidayDays = 0;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  calendarDays.forEach((d) => {
+    const dDate = new Date(d.date);
+    dDate.setHours(0, 0, 0, 0);
+
+    if (dDate <= today) {
+      totalDays++;
+      if (billableStatuses.includes(d.breakfast)) breakfastTaken++; else breakfastMissed++;
+      if (billableStatuses.includes(d.lunch)) lunchTaken++; else lunchMissed++;
+      if (billableStatuses.includes(d.dinner)) dinnerTaken++; else dinnerMissed++;
+
+      if (d.breakfast === 'leave' && d.lunch === 'leave' && d.dinner === 'leave') leaveDays++;
+      if (d.breakfast === 'holiday' && d.lunch === 'holiday' && d.dinner === 'holiday') holidayDays++;
+    }
+  });
+
+  const totalMealsConsumed = breakfastTaken + lunchTaken + dinnerTaken;
+  const totalMealsMissed = breakfastMissed + lunchMissed + dinnerMissed;
+  const attendancePercentage = totalDays > 0 ? Math.round((totalMealsConsumed / (totalDays * 3)) * 1000) / 10 : 0;
+
+  const stats = {
+    totalDays,
+    breakfastTaken,
+    lunchTaken,
+    dinnerTaken,
+    breakfastMissed,
+    lunchMissed,
+    dinnerMissed,
+    totalMealsConsumed,
+    totalMealsMissed,
+    leaveDays,
+    holidayDays,
+    attendancePercentage,
+  };
 
   const Bill = require('../models/Bill');
   let currentBill = await Bill.findOne({
     studentId,
     bookingId,
-    'billingPeriod.year': year,
-    'billingPeriod.month': month,
+    'billingPeriod.year': validYear,
+    'billingPeriod.month': validMonth,
   });
 
   let currentBillAmount = 0;
   if (currentBill) {
     currentBillAmount = currentBill.totalAmount;
   } else {
-    // If no bill document exists yet for an ongoing month, calculate live from attendance
     const messPricing = booking.messId?.mealPricing;
     const bPrice = messPricing?.breakfast || 40;
-    const lPrice = messPricing?.lunch || 80;
-    const dPrice = messPricing?.dinner || 80;
-    const subtotal = (stats.breakfastTaken * bPrice) + (stats.lunchTaken * lPrice) + (stats.dinnerTaken * dPrice);
+    const lPrice = messPricing?.lunch || 70;
+    const dPrice = messPricing?.dinner || 70;
+    const subtotal = (breakfastTaken * bPrice) + (lunchTaken * lPrice) + (dinnerTaken * dPrice);
     const gstPct = messPricing?.gstPercentage || 0;
     currentBillAmount = Math.round((subtotal + (subtotal * gstPct) / 100) * 100) / 100;
   }
 
   return {
-    year,
-    month,
-    messName: booking.messId?.name,
+    year: validYear,
+    month: validMonth,
+    messName: booking.messId?.name || 'Mess',
     bookingId,
     planType: booking.planType,
     currentBillAmount,
@@ -91,16 +130,9 @@ const getMonthlyStats = async (studentId, bookingId, year, month) => {
 
 /**
  * Get the daily attendance calendar data for a student in a given month.
- * Returns an array of attendance records (one per day) for rendering
- * a color-coded calendar grid.
- *
- * @param {string} studentId - The student's user ID
- * @param {string} bookingId - The booking ID
- * @param {number} year      - Calendar year
- * @param {number} month     - Calendar month (1-12)
+ * Automatically defaults past and current days (up to today) to 'present' if unrecorded.
  */
 const getMonthlyCalendar = async (studentId, bookingId, year, month) => {
-  // Validate the booking belongs to this student
   const booking = await Booking.findOne({
     _id: bookingId,
     studentId,
@@ -110,13 +142,17 @@ const getMonthlyCalendar = async (studentId, bookingId, year, month) => {
     throw new AppError('Booking not found or does not belong to you', 404);
   }
 
-  const startDate = new Date(year, month - 1, 1);
+  const validYear = parseInt(year, 10) || new Date().getFullYear();
+  const validMonth = parseInt(month, 10) || (new Date().getMonth() + 1);
+
+  const startDate = new Date(validYear, validMonth - 1, 1);
   startDate.setHours(0, 0, 0, 0);
 
-  const endDate = new Date(year, month, 0);
+  const daysInMonth = new Date(validYear, validMonth, 0).getDate();
+  const endDate = new Date(validYear, validMonth, 0);
   endDate.setHours(23, 59, 59, 999);
 
-  const records = await Attendance.find({
+  const existingRecords = await Attendance.find({
     studentId: new mongoose.Types.ObjectId(studentId),
     bookingId: new mongoose.Types.ObjectId(bookingId),
     date: { $gte: startDate, $lte: endDate },
@@ -125,16 +161,59 @@ const getMonthlyCalendar = async (studentId, bookingId, year, month) => {
     .select('date breakfast lunch dinner lockedForBilling notes')
     .lean();
 
-  // Transform into a simpler shape for the frontend calendar
-  return records.map((record) => ({
-    date: record.date,
-    day: new Date(record.date).getDate(),
-    breakfast: record.breakfast.status,
-    lunch: record.lunch.status,
-    dinner: record.dinner.status,
-    lockedForBilling: record.lockedForBilling,
-    notes: record.notes || '',
-  }));
+  const recordMap = new Map();
+  existingRecords.forEach((rec) => {
+    const d = new Date(rec.date).getDate();
+    recordMap.set(d, rec);
+  });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const days = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateObj = new Date(validYear, validMonth - 1, day);
+    dateObj.setHours(0, 0, 0, 0);
+
+    const isPastOrToday = dateObj <= today;
+    const existing = recordMap.get(day);
+
+    if (existing) {
+      days.push({
+        date: existing.date,
+        day,
+        breakfast: existing.breakfast?.status || (isPastOrToday ? 'present' : 'absent'),
+        lunch: existing.lunch?.status || (isPastOrToday ? 'present' : 'absent'),
+        dinner: existing.dinner?.status || (isPastOrToday ? 'present' : 'absent'),
+        lockedForBilling: existing.lockedForBilling || false,
+        notes: existing.notes || '',
+      });
+    } else if (isPastOrToday) {
+      // By default up to today, mark present!
+      days.push({
+        date: dateObj,
+        day,
+        breakfast: 'present',
+        lunch: 'present',
+        dinner: 'present',
+        lockedForBilling: false,
+        notes: '',
+      });
+    } else {
+      // Future date
+      days.push({
+        date: dateObj,
+        day,
+        breakfast: 'absent',
+        lunch: 'absent',
+        dinner: 'absent',
+        lockedForBilling: false,
+        notes: '',
+      });
+    }
+  }
+
+  return days;
 };
 
 /**

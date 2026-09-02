@@ -32,22 +32,22 @@ const useStudentAttendance = () => {
     setIsLoadingBookings(true);
     try {
       const { data } = await getMyAttendanceBookings();
-      const fetched = data.data.bookings;
+      const fetched = data?.data?.bookings || [];
       setBookings(fetched);
 
-      // Auto-select the first booking if available
-      if (fetched.length > 0 && !selectedBookingId) {
-        setSelectedBookingId(fetched[0].bookingId);
+      if (fetched.length > 0) {
+        setSelectedBookingId((prev) => prev || fetched[0].bookingId);
       }
 
       return fetched;
     } catch (error) {
-      toast.error('Failed to load your bookings');
+      console.error('Failed to load student bookings:', error);
+      setBookings([]);
       return [];
     } finally {
       setIsLoadingBookings(false);
     }
-  }, [selectedBookingId]);
+  }, []);
 
   // Fetch monthly stats + calendar for the selected booking/month
   const fetchMonthlyData = useCallback(
@@ -65,9 +65,10 @@ const useStudentAttendance = () => {
           getMonthlyCalendar(bid, y, m),
         ]);
 
-        setStats(statsRes.data.data);
-        setCalendarDays(calendarRes.data.data.days);
+        setStats(statsRes.data?.data || null);
+        setCalendarDays(calendarRes.data?.data?.days || []);
       } catch (error) {
+        console.error('Failed to load monthly attendance data:', error);
         const message =
           error.response?.data?.message || 'Failed to load attendance data';
         toast.error(message);
