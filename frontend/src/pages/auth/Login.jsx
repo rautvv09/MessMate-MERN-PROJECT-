@@ -77,6 +77,7 @@ const Login = () => {
 
       postLoginRedirect(data.data.user);
     } catch (error) {
+      console.error('[Google Sign-In Error]', error);
       toast.error(error.response?.data?.message || 'Google sign-in failed');
     }
   }, [navigate]);

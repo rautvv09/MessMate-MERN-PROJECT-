@@ -3,11 +3,17 @@ import Cookies from 'js-cookie';
 
 const getApiBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1') && !envUrl.includes('172.') && !envUrl.includes('192.168.')) {
+  if (envUrl) {
     return envUrl;
   }
-  const hostname = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost';
-  return `http://${hostname}:5000/api`;
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('172.')) {
+      return `http://${hostname}:5000/api`;
+    }
+    return `${window.location.origin}/api`;
+  }
+  return 'http://localhost:5000/api';
 };
 
 const api = axios.create({
