@@ -169,8 +169,8 @@ billSchema.index(
 );
 
 // ==================== BILL NUMBER GENERATION ====================
-billSchema.pre('save', async function () {
-  if (!this.isNew) return;
+billSchema.pre('validate', async function () {
+  if (!this.isNew || this.billNumber) return;
 
   const year = new Date().getFullYear();
   const count = await mongoose.model('Bill').countDocuments({

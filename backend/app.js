@@ -128,7 +128,9 @@ app.use("/api/owner", require("./routes/attendanceRoutes"));
 // Student Attendance
 app.use("/api/student/attendance", require("./routes/studentAttendanceRoutes"));
 app.use("/api/student/billing", require("./routes/studentBillingRoutes"));
+app.use("/api/bills", require("./routes/studentBillingRoutes"));
 app.use("/api/student/payments", require("./routes/paymentRoutes"));
+app.use("/api/subscriptions", require("./routes/bookingRoutes"));
 
 // Owner Billing
 app.use("/api/owner", require("./routes/billingRoutes"));

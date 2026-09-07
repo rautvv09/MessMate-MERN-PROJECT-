@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { FaStar, FaMapMarkerAlt, FaHeart, FaRegHeart, FaShareAlt, FaCheckCircle, FaCalendarAlt, FaShieldAlt, FaPhoneAlt, FaUtensils, FaUser } from 'react-icons/fa';
 import { getMess } from '../../services/messService';
 import { getMenu } from '../../services/menuService';
-import { previewPrice, createBooking } from '../../services/bookingService';
+import { previewPrice, createBooking, getActiveSubscription, cancelSubscription } from '../../services/bookingService';
 import { checkFavorites, addFavorite, removeFavorite } from '../../services/favoriteService';
 import { useAuth } from '../../context/AuthContext';
 import Gallery from '../../components/Gallery';
@@ -32,11 +32,23 @@ const MessDetails = () => {
   });
   const [priceBreakdown, setPriceBreakdown] = useState(null);
   const [isBooking, setIsBooking] = useState(false);
+  const [activeSubscription, setActiveSubscription] = useState(null);
+  const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
 
   const fetchMess = useCallback(async () => {
     const { data } = await getMess(messId);
     setMess(data.data.mess);
   }, [messId]);
+
+  const fetchActiveSubscription = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const { data } = await getActiveSubscription();
+      setActiveSubscription(data.data?.activeSubscription || null);
+    } catch (err) {
+      console.error('Failed to check active subscription:', err);
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const loadPage = async () => {
@@ -49,6 +61,7 @@ const MessDetails = () => {
         if (isAuthenticated) {
           const favData = await checkFavorites([messId]);
           setIsFavorited(favData.data.data.favoritedIds.includes(messId));
+          await fetchActiveSubscription();
         }
       } catch (error) {
         toast.error('Could not load mess details.');
@@ -57,7 +70,7 @@ const MessDetails = () => {
       }
     };
     loadPage();
-  }, [messId, fetchMess, isAuthenticated]);
+  }, [messId, fetchMess, isAuthenticated, fetchActiveSubscription]);
 
   useEffect(() => {
     if (!mess) return;
@@ -100,6 +113,25 @@ const MessDetails = () => {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if (!activeSubscription) return;
+    if (!window.confirm('Are you sure you want to cancel your current mess subscription?')) return;
+
+    setIsCancellingSubscription(true);
+    try {
+      await cancelSubscription(activeSubscription._id || activeSubscription.subscriptionId, {
+        cancellationReason: 'Cancelled by student from mess page',
+      });
+      toast.success('Subscription cancelled successfully. You may now choose another mess.');
+      setActiveSubscription(null);
+      await fetchActiveSubscription();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to cancel subscription');
+    } finally {
+      setIsCancellingSubscription(false);
+    }
+  };
+
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
 
@@ -124,9 +156,13 @@ const MessDetails = () => {
         toast(`Mess is full — you've been waitlisted (${newBooking.bookingId})`, { icon: '⏳' });
       }
 
-      navigate('/bookings/me');
+      navigate('/student/subscription');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Booking failed. Please try again.');
+      const msg = error.response?.data?.message || 'Booking failed. Please try again.';
+      toast.error(msg, { duration: 6000 });
+      if (error.response?.status === 409) {
+        fetchActiveSubscription();
+      }
     } finally {
       setIsBooking(false);
     }
@@ -272,80 +308,172 @@ const MessDetails = () => {
               </div>
             </div>
 
-            <form onSubmit={handleBookingSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-text-primary block mb-1.5">Select Meal Plan</label>
-                <select
-                  value={booking.planType}
-                  onChange={(e) => setBooking({ ...booking, planType: e.target.value })}
-                  className="w-full px-4 py-3 rounded-2xl bg-background border border-border text-xs font-semibold text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
-                >
-                  {PLAN_OPTIONS.map((p) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-text-primary block mb-1.5">Subscription Duration</label>
-                <select
-                  value={booking.durationMonths}
-                  onChange={(e) => setBooking({ ...booking, durationMonths: Number(e.target.value) })}
-                  className="w-full px-4 py-3 rounded-2xl bg-background border border-border text-xs font-semibold text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
-                >
-                  {DURATION_OPTIONS.map((d) => (
-                    <option key={d} value={d}>{d} Month{d > 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-text-primary block mb-1.5">Subscription Joining Date</label>
-                <input
-                  type="date"
-                  min={todayISO}
-                  value={booking.joiningDate}
-                  onChange={(e) => setBooking({ ...booking, joiningDate: e.target.value })}
-                  className="w-full px-4 py-3 rounded-2xl bg-background border border-border text-xs font-semibold text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
-                />
-              </div>
-
-              {/* Live Price Breakdown Card */}
-              {priceBreakdown && (
-                <div className="bg-background border border-border rounded-2xl p-4 text-xs space-y-2">
-                  <div className="flex justify-between text-text-secondary">
-                    <span>Base Plan Cost</span>
-                    <span className="font-semibold text-text-primary">₹{priceBreakdown.planCost}</span>
+            {/* CASE 1: Student is currently subscribed to THIS mess */}
+            {activeSubscription && (activeSubscription.messId?._id?.toString() === messId.toString() || activeSubscription.messId === messId) ? (
+              <div className="space-y-4">
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 text-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <FaCheckCircle /> Active Subscription
+                    </span>
+                    <span className="font-mono text-[10px] text-text-muted">{activeSubscription.bookingId}</span>
                   </div>
-                  {priceBreakdown.discountApplied > 0 && (
-                    <div className="flex justify-between text-primary font-semibold">
-                      <span>Discount</span>
-                      <span>-₹{priceBreakdown.discountApplied}</span>
+                  <p className="text-text-primary font-bold text-sm">
+                    {activeSubscription.planType} Plan
+                  </p>
+                  <div className="text-[11px] text-text-secondary space-y-1 pt-1 border-t border-emerald-500/20">
+                    <div className="flex justify-between">
+                      <span>Start Date:</span>
+                      <span className="font-semibold text-text-primary">
+                        {new Date(activeSubscription.startDate || activeSubscription.joiningDate).toLocaleDateString()}
+                      </span>
                     </div>
-                  )}
-                  <div className="flex justify-between text-text-secondary">
-                    <span>Security Deposit</span>
-                    <span className="font-semibold text-text-primary">₹{priceBreakdown.deposit}</span>
-                  </div>
-                  <div className="flex justify-between text-text-secondary">
-                    <span>Registration Fee</span>
-                    <span className="font-semibold text-text-primary">₹{priceBreakdown.registrationFee}</span>
-                  </div>
-                  <div className="flex justify-between font-extrabold text-sm text-text-primary pt-2 border-t border-border">
-                    <span>Total Payable</span>
-                    <span className="text-primary">₹{priceBreakdown.totalPayable}</span>
+                    {activeSubscription.endDate && (
+                      <div className="flex justify-between">
+                        <span>Valid Until:</span>
+                        <span className="font-semibold text-text-primary">
+                          {new Date(activeSubscription.endDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span>Amount:</span>
+                      <span className="font-extrabold text-primary">
+                        ₹{activeSubscription.priceSnapshot?.totalPayable}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              )}
 
-              <button
-                type="submit"
-                disabled={isBooking}
-                className="w-full bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-primary/25 transition-all text-xs tracking-wide uppercase"
-              >
-                {isBooking ? 'Processing Booking...' : 'Subscribe & Book Now'}
-              </button>
-            </form>
+                <p className="text-xs text-text-secondary text-center">
+                  You already have an active subscription for this mess.
+                </p>
+
+                <div className="space-y-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/student/subscription')}
+                    className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-2xl text-xs transition-all shadow-md"
+                  >
+                    View Current Subscription
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCancelSubscription}
+                    disabled={isCancellingSubscription}
+                    className="w-full bg-background hover:bg-status-danger/10 text-status-danger border border-status-danger/30 font-bold py-2.5 rounded-2xl text-xs transition-all disabled:opacity-50"
+                  >
+                    {isCancellingSubscription ? 'Cancelling...' : 'Cancel Subscription'}
+                  </button>
+                </div>
+              </div>
+            ) : activeSubscription ? (
+              /* CASE 2: Student is subscribed to ANOTHER mess */
+              <div className="space-y-4">
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-xs space-y-2">
+                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-extrabold">
+                    <FaShieldAlt /> Single Subscription Policy
+                  </div>
+                  <p className="text-text-primary font-bold text-xs leading-relaxed">
+                    You already have an active subscription with{' '}
+                    <span className="text-primary">{activeSubscription.messId?.name || 'another mess'}</span>.
+                  </p>
+                  <p className="text-[11px] text-text-secondary">
+                    Please cancel or wait until your current subscription expires before subscribing to another mess.
+                  </p>
+                  {activeSubscription.endDate && (
+                    <div className="text-[10px] text-text-muted pt-1 border-t border-amber-500/20">
+                      Active until: {new Date(activeSubscription.endDate).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/student/subscription')}
+                  className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-2xl text-xs transition-all shadow-md"
+                >
+                  View Current Subscription
+                </button>
+              </div>
+            ) : (
+              /* CASE 3: No active subscription - Show Booking Form */
+              <form onSubmit={handleBookingSubmit} className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-text-primary block mb-1.5">Select Meal Plan</label>
+                  <select
+                    value={booking.planType}
+                    onChange={(e) => setBooking({ ...booking, planType: e.target.value })}
+                    className="w-full px-4 py-3 rounded-2xl bg-background border border-border text-xs font-semibold text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
+                  >
+                    {PLAN_OPTIONS.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-text-primary block mb-1.5">Subscription Duration</label>
+                  <select
+                    value={booking.durationMonths}
+                    onChange={(e) => setBooking({ ...booking, durationMonths: Number(e.target.value) })}
+                    className="w-full px-4 py-3 rounded-2xl bg-background border border-border text-xs font-semibold text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
+                  >
+                    {DURATION_OPTIONS.map((d) => (
+                      <option key={d} value={d}>{d} Month{d > 1 ? 's' : ''}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-text-primary block mb-1.5">Subscription Joining Date</label>
+                  <input
+                    type="date"
+                    min={todayISO}
+                    value={booking.joiningDate}
+                    onChange={(e) => setBooking({ ...booking, joiningDate: e.target.value })}
+                    className="w-full px-4 py-3 rounded-2xl bg-background border border-border text-xs font-semibold text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+
+                {/* Live Price Breakdown Card */}
+                {priceBreakdown && (
+                  <div className="bg-background border border-border rounded-2xl p-4 text-xs space-y-2">
+                    <div className="flex justify-between text-text-secondary">
+                      <span>Base Plan Cost</span>
+                      <span className="font-semibold text-text-primary">₹{priceBreakdown.planCost}</span>
+                    </div>
+                    {priceBreakdown.discountApplied > 0 && (
+                      <div className="flex justify-between text-primary font-semibold">
+                        <span>Discount</span>
+                        <span>-₹{priceBreakdown.discountApplied}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-text-secondary">
+                      <span>Security Deposit</span>
+                      <span className="font-semibold text-text-primary">₹{priceBreakdown.deposit}</span>
+                    </div>
+                    <div className="flex justify-between text-text-secondary">
+                      <span>Registration Fee</span>
+                      <span className="font-semibold text-text-primary">₹{priceBreakdown.registrationFee}</span>
+                    </div>
+                    <div className="flex justify-between font-extrabold text-sm text-text-primary pt-2 border-t border-border">
+                      <span>Total Payable</span>
+                      <span className="text-primary">₹{priceBreakdown.totalPayable}</span>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isBooking}
+                  className="w-full bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-primary/25 transition-all text-xs tracking-wide uppercase"
+                >
+                  {isBooking ? 'Processing Booking...' : 'Subscribe & Book Now'}
+                </button>
+              </form>
+            )}
 
             <div className="pt-2 text-center text-[10px] text-text-secondary flex items-center justify-center gap-1">
               <FaShieldAlt className="text-primary" /> 100% Refund Guarantee & Mess Quality Assurance

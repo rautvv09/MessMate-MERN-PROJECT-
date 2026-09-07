@@ -63,6 +63,10 @@ function App() {
               element={<ProtectedRoute allowedRoles={['student']}><MyBookings /></ProtectedRoute>}
             />
             <Route
+              path="/student/subscription"
+              element={<ProtectedRoute allowedRoles={['student']}><MyBookings /></ProtectedRoute>}
+            />
+            <Route
               path="/profile"
               element={<ProtectedRoute allowedRoles={['student', 'owner']}><Profile /></ProtectedRoute>}
             />
@@ -72,6 +76,14 @@ function App() {
             />
             <Route
               path="/my-bills"
+              element={<ProtectedRoute allowedRoles={['student']}><StudentBillingPage /></ProtectedRoute>}
+            />
+            <Route
+              path="/student/bills"
+              element={<ProtectedRoute allowedRoles={['student']}><StudentBillingPage /></ProtectedRoute>}
+            />
+            <Route
+              path="/student/bills/:billId"
               element={<ProtectedRoute allowedRoles={['student']}><StudentBillingPage /></ProtectedRoute>}
             />
 

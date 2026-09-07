@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
+const User = require('../models/User');
 const Bill = require('../models/Bill');
 const Attendance = require('../models/Attendance');
 const Booking = require('../models/Booking');
 const MessListing = require('../models/MessListing');
+const Notification = require('../models/Notification');
 const AppError = require('../utils/AppError');
 
 /**

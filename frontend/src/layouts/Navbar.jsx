@@ -41,9 +41,9 @@ const Navbar = () => {
 
   const studentLinks = [
     { to: '/dashboard', label: 'Find Mess', icon: FaCompass },
-    { to: '/bookings/me', label: 'My Bookings', icon: FaUtensils },
+    { to: '/student/subscription', label: 'My Subscription', icon: FaUtensils },
     { to: '/my-attendance', label: 'Attendance', icon: FaCalendarAlt },
-    { to: '/my-bills', label: 'Bills', icon: FaReceipt },
+    { to: '/student/bills', label: 'Bills', icon: FaReceipt },
   ];
 
   const ownerLinks = [
@@ -69,7 +69,15 @@ const Navbar = () => {
     ? ownerLinks
     : studentLinks;
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    if (path === '/student/subscription') {
+      return location.pathname === '/student/subscription' || location.pathname === '/bookings/me';
+    }
+    if (path === '/student/bills') {
+      return location.pathname.startsWith('/student/bills') || location.pathname.startsWith('/my-bills');
+    }
+    return location.pathname === path;
+  };
 
   return (
     <header

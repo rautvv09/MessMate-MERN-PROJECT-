@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { FaFileInvoiceDollar, FaFilePdf, FaExclamationCircle, FaCreditCard, FaMoneyBillWave, FaCheckCircle } from 'react-icons/fa';
 import useStudentBilling from '../../hooks/useStudentBilling';
 import BillDetailModal from '../../components/BillDetailModal';
@@ -6,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const StudentBillingPage = () => {
   const { user } = useAuth();
+  const { billId } = useParams();
   
   const {
     bills,
@@ -29,6 +31,12 @@ const StudentBillingPage = () => {
   useEffect(() => {
     fetchBills();
   }, [fetchBills]);
+
+  useEffect(() => {
+    if (billId) {
+      fetchBillDetails(billId);
+    }
+  }, [billId, fetchBillDetails]);
 
   const monthNames = [
     '', 'January', 'February', 'March', 'April', 'May', 'June',

@@ -1,11 +1,14 @@
 const cron = require('node-cron');
-const Bill = require('../models/Bill');
+const User = require('../models/User');
 const MessListing = require('../models/MessListing');
 const Booking = require('../models/Booking');
+const Attendance = require('../models/Attendance');
+const Bill = require('../models/Bill');
+const Notification = require('../models/Notification');
 const { generateBill } = require('../services/billingService');
 
 /**
- * Generates monthly bills for all active confirmed bookings across all messes.
+ * Generates monthly bills for all active confirmed subscriptions across all messes.
  *
  * @param {number} targetYear - Billing year (e.g. 2026)
  * @param {number} targetMonth - Billing month (1-12)
@@ -14,6 +17,16 @@ const generateAllMonthlyBills = async (targetYear, targetMonth) => {
   console.log(`[MONTHLY BILLING CRON] Starting bill generation for period ${targetYear}/${targetMonth}...`);
 
   try {
+    // 1. Auto-expire any completed subscriptions past their end date
+    await Booking.updateMany(
+      {
+        status: 'confirmed',
+        endDate: { $lt: new Date() },
+      },
+      { $set: { status: 'completed' } }
+    );
+
+    // 2. Fetch all active confirmed subscriptions
     const activeBookings = await Booking.find({ status: 'confirmed' }).populate('messId');
 
     let successCount = 0;
@@ -116,4 +129,3 @@ const scheduleMonthlyBilling = () => {
 };
 
 module.exports = { scheduleMonthlyBilling, generateAllMonthlyBills, markOverdueBills };
-
