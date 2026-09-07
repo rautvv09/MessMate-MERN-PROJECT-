@@ -23,7 +23,13 @@ const Login = () => {
   const postLoginRedirect = (user) => {
     setAuthUser(user);
     toast.success(`Welcome back, ${user.name}!`);
-    navigate(user.role === 'owner' ? '/owner/dashboard' : '/dashboard');
+    if (user.role === 'admin') {
+      navigate('/admin/dashboard');
+    } else if (user.role === 'owner') {
+      navigate('/owner/dashboard');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleSubmit = async (e) => {

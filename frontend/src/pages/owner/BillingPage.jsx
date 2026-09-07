@@ -15,6 +15,7 @@ import {
 import useBilling from '../../hooks/useBilling';
 import PricingConfig from '../../components/PricingConfig';
 import GenerateBillModal from '../../components/GenerateBillModal';
+import BillDetailModal from '../../components/BillDetailModal';
 import { getMyMesses } from '../../services/ownerService';
 
 const BillingPage = () => {
@@ -93,6 +94,10 @@ const BillingPageContent = ({ messId, messes, onSelectMess }) => {
     handleMarkAsPaid,
     handleDownloadPDF,
     handleExportCSV,
+    selectedBillDetails,
+    isLoadingBillDetails,
+    fetchBillDetails,
+    clearBillDetails,
   } = useBilling(messId);
 
   useEffect(() => {
@@ -322,6 +327,7 @@ const BillingPageContent = ({ messId, messes, onSelectMess }) => {
                     bill={bill}
                     onMarkPaid={() => handleMarkAsPaid(bill._id, 'cash')}
                     onDownloadPDF={() => handleDownloadPDF(bill._id, bill.billNumber)}
+                    onClick={() => fetchBillDetails(bill._id)}
                   />
                 ))}
               </div>
@@ -340,47 +346,80 @@ const BillingPageContent = ({ messId, messes, onSelectMess }) => {
         onGenerate={handleGenerateBill}
         isGenerating={isGenerating}
       />
+
+      <BillDetailModal
+        isOpen={!!selectedBillDetails || isLoadingBillDetails}
+        onClose={clearBillDetails}
+        bill={selectedBillDetails}
+        isLoading={isLoadingBillDetails}
+        onDownloadPDF={handleDownloadPDF}
+        onMarkPaid={(billId) => {
+          handleMarkAsPaid(billId, 'cash');
+          clearBillDetails();
+        }}
+      />
     </div>
   );
 };
 
-const BillCard = ({ bill, onMarkPaid, onDownloadPDF }) => {
+const BillCard = ({ bill, onMarkPaid, onDownloadPDF, onClick }) => {
   const isPaid = bill.paymentStatus === 'paid';
+
+  const statusColors = {
+    pending: 'bg-amber-500/10 text-amber-500 border-amber-500/30',
+    paid: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30',
+    overdue: 'bg-status-danger/10 text-status-danger border-status-danger/30',
+    partially_paid: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
+  };
 
   return (
     <div className="bg-surface border border-border rounded-3xl p-5 hover:border-primary/50 transition-all shadow-xs space-y-4">
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="text-xs font-bold text-text-primary">{bill.studentId.name}</h3>
-          <p className="text-[10px] text-text-secondary">{bill.billNumber}</p>
+      <div
+        className="cursor-pointer space-y-3"
+        onClick={onClick}
+        title="Click to view full breakdown"
+      >
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-xs font-bold text-text-primary">{bill.studentId.name}</h3>
+            <p className="text-[10px] text-text-secondary">{bill.billNumber}</p>
+          </div>
+          <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border ${statusColors[bill.paymentStatus] || statusColors.pending}`}>
+            {bill.paymentStatus.replace('_', ' ')}
+          </span>
         </div>
-        <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border ${isPaid ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30' : 'bg-amber-500/10 text-amber-500 border-amber-500/30'}`}>
-          {bill.paymentStatus}
-        </span>
-      </div>
 
-      <div className="space-y-1.5 text-xs text-text-secondary">
-        <div className="flex justify-between">
-          <span>Period:</span>
-          <span className="font-bold text-text-primary">{bill.billingPeriod.month}/{bill.billingPeriod.year}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Amount:</span>
-          <span className="font-extrabold text-primary text-sm">₹{bill.totalAmount.toFixed(2)}</span>
+        <div className="space-y-1.5 text-xs text-text-secondary">
+          <div className="flex justify-between">
+            <span>Period:</span>
+            <span className="font-bold text-text-primary">{bill.billingPeriod.month}/{bill.billingPeriod.year}</span>
+          </div>
+          {bill.mealCounts && (
+            <div className="flex justify-between">
+              <span>Meals:</span>
+              <span className="font-bold text-text-primary">
+                {bill.mealCounts.breakfastCount}B + {bill.mealCounts.lunchCount}L + {bill.mealCounts.dinnerCount}D
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <span>Amount:</span>
+            <span className="font-extrabold text-primary text-sm">₹{bill.totalAmount.toFixed(2)}</span>
+          </div>
         </div>
       </div>
 
       <div className="flex items-center gap-2 pt-3 border-t border-border">
         {!isPaid && (
           <button
-            onClick={onMarkPaid}
+            onClick={(e) => { e.stopPropagation(); onMarkPaid(); }}
             className="flex-1 py-2 bg-emerald-500 text-white text-xs font-bold rounded-xl hover:bg-emerald-600 transition-all text-center"
           >
             Mark Paid
           </button>
         )}
         <button
-          onClick={onDownloadPDF}
+          onClick={(e) => { e.stopPropagation(); onDownloadPDF(); }}
           className="flex-1 py-2 bg-background border border-border text-text-primary text-xs font-bold rounded-xl hover:border-primary transition-all text-center"
         >
           PDF

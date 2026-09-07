@@ -26,8 +26,15 @@ exports.protect = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError('The user belonging to this session no longer exists', 401));
   }
-  if (!user.isActive) {
-    return next(new AppError('This account has been deactivated', 403));
+  if (!user.isActive || user.status === 'suspended' || user.status === 'inactive') {
+    return next(
+      new AppError(
+        user.status === 'suspended'
+          ? 'Your account has been suspended by an administrator. Please contact support.'
+          : 'This account has been deactivated.',
+        403
+      )
+    );
   }
 
   req.user = user;
@@ -42,3 +49,7 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
+
+// Aliases for clear requirement mapping
+exports.authenticateUser = exports.protect;
+exports.requireAdmin = exports.restrictTo('admin');

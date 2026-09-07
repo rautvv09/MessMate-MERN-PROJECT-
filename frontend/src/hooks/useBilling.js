@@ -9,6 +9,7 @@ import {
   updatePaymentStatus,
   downloadBillPDF,
   downloadBillsCSV,
+  getBillById,
 } from '../services/billingService';
 
 /**
@@ -34,6 +35,8 @@ const useBilling = (messId) => {
   const [isLoadingBillable, setIsLoadingBillable] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUpdatingPricing, setIsUpdatingPricing] = useState(false);
+  const [selectedBillDetails, setSelectedBillDetails] = useState(null);
+  const [isLoadingBillDetails, setIsLoadingBillDetails] = useState(false);
 
   // Fetch Pricing
   const fetchPricing = useCallback(async () => {
@@ -176,6 +179,20 @@ const useBilling = (messId) => {
     }
   };
 
+  const fetchBillDetails = async (billId) => {
+    setIsLoadingBillDetails(true);
+    try {
+      const { data } = await getBillById(billId);
+      setSelectedBillDetails(data.data);
+    } catch (error) {
+      toast.error('Failed to load bill details');
+    } finally {
+      setIsLoadingBillDetails(false);
+    }
+  };
+
+  const clearBillDetails = () => setSelectedBillDetails(null);
+
   return {
     pricing,
     bills,
@@ -202,6 +219,10 @@ const useBilling = (messId) => {
     handleMarkAsPaid,
     handleDownloadPDF,
     handleExportCSV,
+    selectedBillDetails,
+    isLoadingBillDetails,
+    fetchBillDetails,
+    clearBillDetails,
   };
 };
 

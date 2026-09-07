@@ -1,4 +1,5 @@
 const cron = require('node-cron');
+const Bill = require('../models/Bill');
 const MessListing = require('../models/MessListing');
 const Booking = require('../models/Booking');
 const { generateBill } = require('../services/billingService');
@@ -53,9 +54,32 @@ const generateAllMonthlyBills = async (targetYear, targetMonth) => {
 };
 
 /**
+ * Marks all pending bills past their due date as 'overdue'.
+ * Runs daily at midnight.
+ */
+const markOverdueBills = async () => {
+  try {
+    const result = await Bill.updateMany(
+      {
+        paymentStatus: 'pending',
+        dueDate: { $lt: new Date() },
+      },
+      { $set: { paymentStatus: 'overdue' } }
+    );
+
+    if (result.modifiedCount > 0) {
+      console.log(`[OVERDUE CRON] Marked ${result.modifiedCount} bill(s) as overdue.`);
+    }
+  } catch (error) {
+    console.error('[OVERDUE CRON] Error marking overdue bills:', error);
+  }
+};
+
+/**
  * Schedules the automated monthly billing cron job.
  * 1. Runs at 23:55 PM on month-end days (28th-31st) when tomorrow is the 1st.
  * 2. Runs at 00:05 AM on the 1st of every month for the month that just ended.
+ * 3. Runs daily at midnight to mark overdue bills.
  */
 const scheduleMonthlyBilling = () => {
   // 1. Month-end check at 23:55 PM
@@ -83,6 +107,13 @@ const scheduleMonthlyBilling = () => {
     console.log(`[CRON] 1st-of-month backup billing running for ${year}/${month}...`);
     await generateAllMonthlyBills(year, month);
   });
+
+  // 3. Daily overdue check at midnight
+  cron.schedule('0 0 * * *', async () => {
+    console.log('[CRON] Running daily overdue bill check...');
+    await markOverdueBills();
+  });
 };
 
-module.exports = { scheduleMonthlyBilling, generateAllMonthlyBills };
+module.exports = { scheduleMonthlyBilling, generateAllMonthlyBills, markOverdueBills };
+

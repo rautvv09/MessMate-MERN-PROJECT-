@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "migrate:google-id-index": "node scripts/migrateGoogleIdIndex.js"
+    "migrate:google-id-index": "node scripts/migrateGoogleIdIndex.js",
+    "seed:admin": "node scripts/seedAdmin.js"
   },
   "keywords": [],
   "author": "",

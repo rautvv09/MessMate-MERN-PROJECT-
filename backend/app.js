@@ -135,6 +135,9 @@ app.use("/api/owner", require("./routes/billingRoutes"));
 app.use("/api/owner", require("./routes/reportingRoutes"));
 app.use("/api/owner", require("./routes/exportRoutes"));
 
+// Admin Module
+app.use("/api/admin", require("./routes/adminRoutes"));
+
 /* =====================================================
    Serve Frontend in Production / Built State
 ===================================================== */

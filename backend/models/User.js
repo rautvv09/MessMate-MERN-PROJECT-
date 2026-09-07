@@ -59,8 +59,8 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: {
-        values: ['student', 'owner'],
-        message: 'Role must be either student or owner',
+        values: ['student', 'owner', 'admin'],
+        message: 'Role must be student, owner, or admin',
       },
       required: true,
       immutable: true,
@@ -141,6 +141,12 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
 
+    status: {
+      type: String,
+      enum: ['active', 'suspended', 'inactive'],
+      default: 'active',
+      index: true,
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -158,6 +164,13 @@ userSchema.index({ role: 1 });
 
 // ==================== PASSWORD HASHING & PRE-SAVE ====================
 userSchema.pre('save', async function () {
+  // Sync status and isActive
+  if (this.isModified('status')) {
+    this.isActive = this.status === 'active';
+  } else if (this.isModified('isActive')) {
+    this.status = this.isActive ? 'active' : 'suspended';
+  }
+
   // Ensure googleId is strictly undefined if null or empty, to avoid sparse index collisions
   if (this.googleId === null || this.googleId === '') {
     this.googleId = undefined;

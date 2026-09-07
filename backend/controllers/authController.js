@@ -9,6 +9,12 @@ const AppError = require('../utils/AppError');
 exports.register = catchAsync(async (req, res, next) => {
   const { name, email, password, phone, role, roleDetails } = req.body;
 
+  if (role === 'admin' || !['student', 'owner'].includes(role)) {
+    return next(
+      new AppError('Invalid role. Public registration is only permitted for students and mess owners.', 400)
+    );
+  }
+
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     return next(new AppError('This email is already registered', 400));
@@ -80,8 +86,15 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Please verify your email before logging in. Check your inbox.', 403));
   }
 
-  if (!user.isActive) {
-    return next(new AppError('This account has been deactivated', 403));
+  if (!user.isActive || user.status === 'suspended' || user.status === 'inactive') {
+    return next(
+      new AppError(
+        user.status === 'suspended'
+          ? 'Your account has been suspended by an administrator. Please contact support.'
+          : 'This account has been deactivated.',
+        403
+      )
+    );
   }
 
   // ---- Success: reset the failed-attempt counter and issue a real session ----
@@ -110,8 +123,15 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
   let user = await User.findOne({ googleId }).select('+refreshTokens');
 
   if (user) {
-    if (!user.isActive) {
-      return next(new AppError('This account has been deactivated', 403));
+    if (!user.isActive || user.status === 'suspended' || user.status === 'inactive') {
+      return next(
+        new AppError(
+          user.status === 'suspended'
+            ? 'Your account has been suspended by an administrator. Please contact support.'
+            : 'This account has been deactivated',
+          403
+        )
+      );
     }
     user.lastLoginAt = new Date();
     await user.save({ validateBeforeSave: false });
@@ -122,8 +142,15 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
   user = await User.findOne({ email }).select('+refreshTokens');
 
   if (user) {
-    if (!user.isActive) {
-      return next(new AppError('This account has been deactivated', 403));
+    if (!user.isActive || user.status === 'suspended' || user.status === 'inactive') {
+      return next(
+        new AppError(
+          user.status === 'suspended'
+            ? 'Your account has been suspended by an administrator. Please contact support.'
+            : 'This account has been deactivated',
+          403
+        )
+      );
     }
     user.googleId = googleId;
     if (!user.avatarUrl) {
