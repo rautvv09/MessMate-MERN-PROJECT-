@@ -14,8 +14,8 @@
 
 | Service | Link |
 | :--- | :--- |
-| **Frontend Web App** | [https://mess-mate-mern-project.vercel.app](https://mess-mate-mern-project.vercel.app) *(or your deployed Vercel/Netlify URL)* |
-| **Backend API** | [https://messmate-api.onrender.com](https://messmate-api.onrender.com) *(or your deployed Render URL)* |
+| **Live Web App** | [https://messmate-mern.onrender.com/](https://messmate-mern.onrender.com/) |
+| **API Health & Base URL** | [https://messmate-mern.onrender.com/api/health](https://messmate-mern.onrender.com/api/health) |
 | **GitHub Repository** | [https://github.com/rautvv09/MessMate-MERN-PROJECT-](https://github.com/rautvv09/MessMate-MERN-PROJECT-) |
 
 ---
