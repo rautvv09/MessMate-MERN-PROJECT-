@@ -31,7 +31,27 @@ const FilterBar = ({ filters, onFilterChange }) => {
         </div>
 
         {/* Dropdowns */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          {/* City */}
+          <div className="relative flex-1 sm:flex-none">
+            <select
+              name="city"
+              value={filters.city || ''}
+              onChange={handleInputChange}
+              className="w-full sm:w-auto px-4 py-3 rounded-2xl bg-surface border border-border text-xs font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary shadow-sm cursor-pointer"
+            >
+              <option value="">📍 All Cities</option>
+              <option value="Ichalkaranji">Ichalkaranji</option>
+              <option value="Kolhapur">Kolhapur</option>
+              <option value="Miraj">Miraj</option>
+              <option value="Sangli">Sangli</option>
+              <option value="Pune">Pune</option>
+              <option value="Satara">Satara</option>
+              <option value="Solapur">Solapur</option>
+              <option value="Mumbai">Mumbai</option>
+            </select>
+          </div>
+
           {/* Min Rating */}
           <div className="relative flex-1 sm:flex-none">
             <select

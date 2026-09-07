@@ -17,6 +17,7 @@ const Dashboard = () => {
 
   const [filters, setFilters] = useState({
     search: initialSearch,
+    city: searchParams.get('city') || '',
     foodType: '',
     minRating: '',
     sort: '',
@@ -41,10 +42,11 @@ const Dashboard = () => {
         const queryParams = {
           ...filters,
           search: debouncedSearch,
-          city: user?.roleDetails?.city,
         };
         Object.keys(queryParams).forEach((key) => {
-          if (queryParams[key] === '') delete queryParams[key];
+          if (queryParams[key] === '' || queryParams[key] === null || queryParams[key] === undefined) {
+            delete queryParams[key];
+          }
         });
 
         const { data } = await getAllMesses(queryParams);
@@ -71,7 +73,7 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, [filters.foodType, filters.minRating, filters.sort, filters.page, debouncedSearch, user]);
+  }, [filters.city, filters.foodType, filters.minRating, filters.sort, filters.page, debouncedSearch, user]);
 
   const handleToggleFavorite = async (messId) => {
     const isCurrentlyFavorited = favoritedIds.has(messId);
@@ -200,7 +202,7 @@ const Dashboard = () => {
             We couldn't find any messes matching your search query or filters. Try clearing your filters.
           </p>
           <button
-            onClick={() => setFilters({ search: '', foodType: '', minRating: '', sort: '', page: 1 })}
+            onClick={() => setFilters({ search: '', city: '', foodType: '', minRating: '', sort: '', page: 1 })}
             className="px-6 py-2.5 rounded-full bg-primary text-white text-xs font-bold shadow-sm hover:bg-primary-dark transition-all"
           >
             Clear All Filters

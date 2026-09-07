@@ -104,8 +104,16 @@ exports.getAllMesses = catchAsync(async (req, res) => {
     if (minPrice) filter['pricing.baseFee'].$gte = Number(minPrice);
     if (maxPrice) filter['pricing.baseFee'].$lte = Number(maxPrice);
   }
-  if (search) {
-    filter.$text = { $search: search };
+  if (search && search.trim()) {
+    const searchRegex = new RegExp(search.trim(), 'i');
+    filter.$or = [
+      { name: searchRegex },
+      { description: searchRegex },
+      { city: searchRegex },
+      { address: searchRegex },
+      { nearbyColleges: searchRegex },
+      { tags: searchRegex },
+    ];
   }
 
   const sortOptions = {
