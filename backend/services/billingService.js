@@ -237,6 +237,26 @@ const getMessBills = async (messId, ownerId, filters = {}) => {
     throw new AppError('Mess not found or not owned by you', 404);
   }
 
+  // Auto-sync bills for all confirmed bookings in this mess for previous & current month
+  const { syncStudentBill } = require('./studentAttendanceService');
+  const activeBookings = await Booking.find({ messId: mess._id, status: 'confirmed' }).populate('messId');
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  let prevMonth = currentMonth - 1;
+  let prevYear = currentYear;
+  if (prevMonth < 1) {
+    prevMonth = 12;
+    prevYear -= 1;
+  }
+
+  for (const booking of activeBookings) {
+    await syncStudentBill(booking, prevYear, prevMonth);
+    await syncStudentBill(booking, currentYear, currentMonth);
+  }
+
   const query = { messId: mess._id };
 
   if (filters.year) query['billingPeriod.year'] = parseInt(filters.year, 10);
@@ -246,7 +266,7 @@ const getMessBills = async (messId, ownerId, filters = {}) => {
   const bills = await Bill.find(query)
     .populate('studentId', 'name email phone')
     .populate('bookingId', 'bookingId planType')
-    .sort({ createdAt: -1 });
+    .sort({ 'billingPeriod.year': -1, 'billingPeriod.month': -1, createdAt: -1 });
 
   return bills;
 };

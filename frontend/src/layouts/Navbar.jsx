@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from '../components/NotificationBell';
 import ThemeToggle from '../components/ui/ThemeToggle';
-import { FaUtensils, FaBars, FaTimes, FaUser, FaSignOutAlt, FaHeart, FaCalendarAlt, FaReceipt, FaStore, FaCompass } from 'react-icons/fa';
+import { FaUtensils, FaBars, FaTimes, FaUser, FaSignOutAlt, FaHeart, FaCalendarAlt, FaReceipt, FaStore, FaCompass, FaUsers, FaStar, FaHistory, FaChartBar, FaShieldAlt } from 'react-icons/fa';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -30,6 +30,7 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const isAdmin = user?.role === 'admin';
   const isOwner = user?.role === 'owner';
 
   const guestLinks = [
@@ -50,8 +51,20 @@ const Navbar = () => {
     { to: '/profile', label: 'My Profile', icon: FaUser },
   ];
 
+  const adminLinks = [
+    { to: '/admin/dashboard', label: 'Dashboard', icon: FaChartBar },
+    { to: '/admin/students', label: 'Students', icon: FaUsers },
+    { to: '/admin/owners', label: 'Owners', icon: FaStore },
+    { to: '/admin/messes', label: 'Messes', icon: FaUtensils },
+    { to: '/admin/bookings', label: 'Bookings', icon: FaReceipt },
+    { to: '/admin/reviews', label: 'Reviews', icon: FaStar },
+    { to: '/admin/audit-logs', label: 'Audit Logs', icon: FaHistory },
+  ];
+
   const activeLinks = !isAuthenticated
     ? guestLinks
+    : isAdmin
+    ? adminLinks
     : isOwner
     ? ownerLinks
     : studentLinks;
@@ -69,7 +82,10 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to={isAuthenticated ? (isOwner ? '/owner/dashboard' : '/dashboard') : '/'} className="flex items-center gap-2.5 group">
+          <Link
+            to={isAuthenticated ? (isAdmin ? '/admin/dashboard' : isOwner ? '/owner/dashboard' : '/dashboard') : '/'}
+            className="flex items-center gap-2.5 group"
+          >
             <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xl shadow-md group-hover:scale-105 transition-transform duration-200">
               <FaUtensils size={18} />
             </div>

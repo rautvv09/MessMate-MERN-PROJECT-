@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { getMyBills, downloadMyBillPDF } from '../services/studentBillingService';
+import { getMyBills, downloadMyBillPDF, getMyBillById } from '../services/studentBillingService';
 import { loadRazorpayScript, createPaymentOrder, verifyPaymentSignature } from '../services/paymentService';
 
 const useStudentBilling = (user) => {
@@ -12,6 +12,8 @@ const useStudentBilling = (user) => {
   const [selectedYear, setSelectedYear] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
+  const [selectedBillDetails, setSelectedBillDetails] = useState(null);
+  const [isLoadingBillDetails, setIsLoadingBillDetails] = useState(false);
 
   const fetchBills = useCallback(async () => {
     setIsLoading(true);
@@ -99,6 +101,20 @@ const useStudentBilling = (user) => {
     }
   };
 
+  const fetchBillDetails = async (billId) => {
+    setIsLoadingBillDetails(true);
+    try {
+      const { data } = await getMyBillById(billId);
+      setSelectedBillDetails(data.data);
+    } catch (error) {
+      toast.error('Failed to load bill details');
+    } finally {
+      setIsLoadingBillDetails(false);
+    }
+  };
+
+  const clearBillDetails = () => setSelectedBillDetails(null);
+
   return {
     bills,
     isLoading,
@@ -112,6 +128,10 @@ const useStudentBilling = (user) => {
     fetchBills,
     handleDownloadPDF,
     handlePayment,
+    selectedBillDetails,
+    isLoadingBillDetails,
+    fetchBillDetails,
+    clearBillDetails,
   };
 };
 

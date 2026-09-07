@@ -56,3 +56,4 @@ exports.getAttendanceSummary = catchAsync(async (req, res) => {
     data: summary,
   });
 });
+   

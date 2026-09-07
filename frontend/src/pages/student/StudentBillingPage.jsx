@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { FaFileInvoiceDollar, FaFilePdf, FaExclamationCircle, FaCreditCard } from 'react-icons/fa';
+import { FaFileInvoiceDollar, FaFilePdf, FaExclamationCircle, FaCreditCard, FaMoneyBillWave, FaCheckCircle } from 'react-icons/fa';
 import useStudentBilling from '../../hooks/useStudentBilling';
+import BillDetailModal from '../../components/BillDetailModal';
 import { useAuth } from '../../context/AuthContext';
 
 const StudentBillingPage = () => {
@@ -19,6 +20,10 @@ const StudentBillingPage = () => {
     fetchBills,
     handleDownloadPDF,
     handlePayment,
+    selectedBillDetails,
+    isLoadingBillDetails,
+    fetchBillDetails,
+    clearBillDetails,
   } = useStudentBilling(user);
 
   useEffect(() => {
@@ -96,6 +101,44 @@ const StudentBillingPage = () => {
         </div>
       </div>
 
+      {/* Summary Stats Bar */}
+      {!isLoading && bills.length > 0 && (() => {
+        const totalPending = bills.filter(b => b.paymentStatus !== 'paid').reduce((sum, b) => sum + b.totalAmount, 0);
+        const totalPaid = bills.filter(b => b.paymentStatus === 'paid').reduce((sum, b) => sum + b.totalAmount, 0);
+        const unpaidCount = bills.filter(b => b.paymentStatus !== 'paid').length;
+        return (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-surface border border-border rounded-2xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                <FaMoneyBillWave size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-text-secondary uppercase">Pending</p>
+                <p className="text-sm font-extrabold text-text-primary">₹{totalPending.toFixed(0)}</p>
+              </div>
+            </div>
+            <div className="bg-surface border border-border rounded-2xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                <FaCheckCircle size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-text-secondary uppercase">Paid</p>
+                <p className="text-sm font-extrabold text-text-primary">₹{totalPaid.toFixed(0)}</p>
+              </div>
+            </div>
+            <div className="bg-surface border border-border rounded-2xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <FaFileInvoiceDollar size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-text-secondary uppercase">Unpaid Bills</p>
+                <p className="text-sm font-extrabold text-text-primary">{unpaidCount}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Bills List */}
       {isLoading ? (
         <div className="flex justify-center py-20">
@@ -114,7 +157,11 @@ const StudentBillingPage = () => {
           {bills.map((bill) => (
             <div key={bill._id} className="bg-surface border border-border rounded-2xl p-5 hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between">
               
-              <div>
+              <div
+                className="cursor-pointer"
+                onClick={() => fetchBillDetails(bill._id)}
+                title="Click to view full breakdown"
+              >
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-base font-extrabold font-heading text-text-primary">{monthNames[bill.billingPeriod.month]} {bill.billingPeriod.year}</h3>
@@ -136,6 +183,14 @@ const StudentBillingPage = () => {
                       {new Date(bill.dueDate).toLocaleDateString()}
                     </span>
                   </div>
+                  {bill.mealCounts && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-text-secondary">Meals:</span>
+                      <span className="font-bold text-text-primary">
+                        {bill.mealCounts.breakfastCount}B + {bill.mealCounts.lunchCount}L + {bill.mealCounts.dinnerCount}D
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm pt-2 border-t border-border">
                     <span className="text-text-primary font-bold">Total Amount:</span>
                     <span className="font-extrabold text-primary font-heading text-base">₹{bill.totalAmount.toFixed(2)}</span>
@@ -168,6 +223,19 @@ const StudentBillingPage = () => {
           ))}
         </div>
       )}
+
+      <BillDetailModal
+        isOpen={!!selectedBillDetails || isLoadingBillDetails}
+        onClose={clearBillDetails}
+        bill={selectedBillDetails}
+        isLoading={isLoadingBillDetails}
+        onDownloadPDF={handleDownloadPDF}
+        onPayNow={(bill) => {
+          clearBillDetails();
+          handlePayment(bill);
+        }}
+        isProcessingPayment={isProcessingPayment}
+      />
     </div>
   );
 };
